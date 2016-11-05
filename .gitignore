@@ -1,0 +1,5 @@
+# Build artifacts
+/target/
+
+# rustfmt backups
+**/*.rs.bk
