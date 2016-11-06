@@ -1,0 +1,9 @@
+cmd: cargo build
+name: Debug build
+targets:
+    "Release build":
+        cmd: cargo build --release
+    "Build and run":
+        cmd: cargo run .
+    "Build and test":
+        cmd: cargo test

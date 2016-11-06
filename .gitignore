@@ -3,3 +3,5 @@
 
 # rustfmt backups
 **/*.rs.bk
+
+*_indentex.tex

@@ -1,0 +1,26 @@
+language: rust
+sudo: false
+
+matrix:
+  include:
+    # Stable
+    - os: linux
+      rust: stable
+    - os: osx
+      rust: stable
+    # Beta
+    - os: linux
+      rust: beta
+    - os: osx
+      rust: beta
+    # Nightly
+    - os: linux
+      rust: nightly
+    - os: osx
+      rust: nightly
+
+script:
+  - cargo --version
+  - rustc --version
+  - cargo build
+  - cargo test
