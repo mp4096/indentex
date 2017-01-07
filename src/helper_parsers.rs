@@ -1,6 +1,7 @@
 // These are slightly modified parsers from nom/src/character.rs
 // They have been modified to consume single bytes instead of characters
 
+// Strictly speaking, `nom::ErrorKind::Char` is misleading, but we do not use it anyway
 #[macro_export]
 macro_rules! specific_byte (
   ($i:expr, $byte: expr) => (
@@ -11,7 +12,7 @@ macro_rules! specific_byte (
         if $byte == $i[0] {
           nom::IResult::Done(&$i[1..], $i[0])
         } else {
-          nom::IResult::Error(error_position!(nom::ErrorKind::OneOf, $i))
+          nom::IResult::Error(error_position!(nom::ErrorKind::Char, $i))
         }
       }
     }
@@ -43,3 +44,33 @@ macro_rules! none_of_bytes_as_bytes (
     }
   );
 );
+
+
+#[cfg(test)]
+mod tests {
+    use nom;
+    use nom::IResult::{Done, Error};
+    use nom::ErrorKind;
+
+    #[test]
+    fn none_of_bytes_as_bytes() {
+        named!(f<u8>, none_of_bytes_as_bytes!("ab".as_bytes()));
+
+        let a = &b"abcd"[..];
+        assert_eq!(f(a), Error(error_position!(ErrorKind::NoneOf, a)));
+
+        let b = &b"cde"[..];
+        assert_eq!(f(b), Done(&b"de"[..], 'c' as u8));
+    }
+
+    #[test]
+    fn specific_byte() {
+        named!(f<u8>, specific_byte!('c' as u8));
+
+        let a = &b"abcd"[..];
+        assert_eq!(f(a), Error(error_position!(ErrorKind::Char, a)));
+
+        let b = &b"cde"[..];
+        assert_eq!(f(b), Done(&b"de"[..], 'c' as u8));
+    }
+}

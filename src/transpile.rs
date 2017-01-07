@@ -99,3 +99,16 @@ pub fn transpile_file<T: AsRef<Path>>(path: T) -> Result<(), IndentexError> {
 
     Ok(())
 }
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn count_left_indent() {
+        use super::count_left_indent;
+
+        assert_eq!(count_left_indent(""), None);
+        assert_eq!(count_left_indent("foo"), Some(0));
+        assert_eq!(count_left_indent("  bar"), Some(2));
+    }
+}

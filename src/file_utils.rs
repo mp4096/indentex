@@ -36,15 +36,6 @@ fn is_indentex_file<T: AsRef<Path>>(filepath: T) -> bool {
     glob.is_match(filepath.as_ref())
 }
 
-#[test]
-fn test_is_indentex_file() {
-    assert!(!is_indentex_file(Path::new("foo")));
-    assert!(!is_indentex_file(Path::new("foo.tex")));
-    assert!(!is_indentex_file(Path::new("foo_inden.tex")));
-
-    assert!(is_indentex_file(Path::new("foo.inden.tex")));
-    assert!(is_indentex_file(Path::new("foo.bar.inden.tex")));
-}
 
 /// Rename an `*.inden.tex` file into `*_inden.tex`
 pub fn rename_indentex_file<T: AsRef<Path>>(old_path: T) -> Result<PathBuf, IndentexError> {
@@ -65,19 +56,6 @@ pub fn rename_indentex_file<T: AsRef<Path>>(old_path: T) -> Result<PathBuf, Inde
     new_pathbuf.push(new_name);
 
     Ok(new_pathbuf)
-}
-
-#[test]
-fn test_rename_indentex_file() {
-    assert_eq!(rename_indentex_file(Path::new("./foo.inden.tex")).unwrap(),
-               PathBuf::from("./foo_indentex.tex"));
-    assert_eq!(rename_indentex_file(Path::new("./foo.bar.inden.tex")).unwrap(),
-               PathBuf::from("./foo.bar_indentex.tex"));
-    assert_eq!(rename_indentex_file(Path::new("./.foo.bar.inden.tex")).unwrap(),
-               PathBuf::from("./.foo.bar_indentex.tex"));
-    assert_eq!(rename_indentex_file(Path::new("foo.inden.tex")).unwrap(),
-               PathBuf::from("foo_indentex.tex"));
-    assert!(rename_indentex_file(Path::new("foo.bar.tex")).is_err())
 }
 
 /// Read a file line by line, right-trim lines and _copy_ them into a vec of strings
@@ -108,4 +86,37 @@ pub fn write_to_file<T, U>(path: T, data: U) -> Result<(), IndentexError>
     buf.write(data.as_ref().as_bytes())?;
 
     Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn is_indentex_file() {
+        use super::is_indentex_file;
+
+        assert!(!is_indentex_file(Path::new("foo")));
+        assert!(!is_indentex_file(Path::new("foo.tex")));
+        assert!(!is_indentex_file(Path::new("foo_inden.tex")));
+
+        assert!(is_indentex_file(Path::new("foo.inden.tex")));
+        assert!(is_indentex_file(Path::new("foo.bar.inden.tex")));
+    }
+
+    #[test]
+    fn rename_indentex_file() {
+        use super::rename_indentex_file;
+
+        assert_eq!(rename_indentex_file(Path::new("./foo.inden.tex")).unwrap(),
+                   PathBuf::from("./foo_indentex.tex"));
+        assert_eq!(rename_indentex_file(Path::new("./foo.bar.inden.tex")).unwrap(),
+                   PathBuf::from("./foo.bar_indentex.tex"));
+        assert_eq!(rename_indentex_file(Path::new("./.foo.bar.inden.tex")).unwrap(),
+                   PathBuf::from("./.foo.bar_indentex.tex"));
+        assert_eq!(rename_indentex_file(Path::new("foo.inden.tex")).unwrap(),
+                   PathBuf::from("foo_indentex.tex"));
+        assert!(rename_indentex_file(Path::new("foo.bar.tex")).is_err())
+    }
 }
