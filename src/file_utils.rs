@@ -92,13 +92,7 @@ pub fn read_and_trim_lines<T: AsRef<Path>>(path: T) -> Result<Vec<String>, Inden
     let file = File::open(path.as_ref())?;
     let buf = BufReader::new(file);
 
-    let mut lines = Vec::new();
-    for l in buf.lines() {
-        let trimmed_line = l?.trim_right().to_string();
-        lines.push(trimmed_line);
-    }
-
-    Ok(lines)
+    buf.lines().map(|r| Ok(r?.trim_right().to_string())).collect()
 }
 
 pub fn write_to_file<T, U>(path: T, data: U) -> Result<(), IndentexError>
