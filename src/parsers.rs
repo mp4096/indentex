@@ -47,8 +47,8 @@ named!(
 );
 named!(escaped_colon<u8>, preceded!(specific_byte!('\\' as u8), specific_byte!(':' as u8)));
 named!(escaped_percent<u8>, preceded!(specific_byte!('\\' as u8), specific_byte!('%' as u8)));
-named!(name_parser<u8>, alt!(escaped_colon | none_of_bytes_as_bytes!(b":([{ \t")));
-named!(opts_parser<u8>, alt!(escaped_colon | none_of_bytes_as_bytes!(b":")));
+named!(name_parser<u8>, alt!(escaped_colon | none_of_bytes_as_bytes!(b":%([{ \t")));
+named!(opts_parser<u8>, alt!(escaped_colon | escaped_percent | none_of_bytes_as_bytes!(b":%")));
 named!(args_parser<u8>, alt!(escaped_percent | none_of_bytes_as_bytes!(b"%")));
 named!(
     hashline_parser<Hashline>,
@@ -70,7 +70,7 @@ fn hashline_helper(ws: &[u8], name: &[u8], opts: &[u8], args: &[u8], comment: &[
 
     // It is ok to unwrap here, since we have checked for UTF-8 when we read the file
     let name_utf8 = from_utf8(name).unwrap().trim();
-    let opts_utf8 = from_utf8(opts).unwrap().trim();
+    let opts_utf8 = from_utf8(opts).unwrap().trim().replace("%", r"\%");
     let args_utf8 = from_utf8(args).unwrap().trim().replace("%", r"\%");
     let comment_utf8 = from_utf8(comment).unwrap().trim();
 
