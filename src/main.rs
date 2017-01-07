@@ -1,4 +1,5 @@
 extern crate ansi_term;
+#[macro_use]
 extern crate clap;
 extern crate globset;
 extern crate ignore;
@@ -24,9 +25,9 @@ fn main() {
     use transpile::transpile_file;
 
     let m = App::new("indentex")
-        .version("0.1.0")
-        .author("Mikhail Pak <mikhail.pak@tum.de>")
-        .about("Transpiler for an indentation-based LaTeX superset")
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about("Transpiler for an indentation-based superset of LaTeX")
         .arg(Arg::with_name("path")
             .help("Path to a single indentex file or a directory (recursively transpile all \
                    indentex files)")
