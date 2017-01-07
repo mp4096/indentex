@@ -24,13 +24,6 @@ addons:
   apt:
     packages:
       - python
-      - python-pip
-      - python-virtualenv
-
-# Activate the Python virtualenv
-before_install:
-  - virtualenv py_integration_tests
-  - source py_integration_tests/bin/activate
 
 script:
   - cargo --version
