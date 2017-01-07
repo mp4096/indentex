@@ -1,0 +1,14 @@
+This should be converted:
+# section: Foo bar
+# section: Foo: bar
+# section [Foo bar]: Foo bar
+# section [Foo\: bar]: Foo: bar
+
+# section* : spam eggs
+
+This is a known bug:
+# section: foo bar % hello
+
+This should not be converted:
+# section
+#section: Foo

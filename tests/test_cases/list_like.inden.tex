@@ -1,0 +1,34 @@
+These lines should not be converted:
+* a
+\* b
+\\* c
+
+
+These lines should be converted to items:
+# itemize:
+  * яблоки
+  * груши
+  * абрикосы
+
+# enumerate:
+  * Alice
+  * Bob
+
+# description:
+  *[Ä] letter Ä
+  *[Ü] letter Ü
+
+
+# itemize:
+  * first level, first item
+    # itemize:
+      * second level, first item
+      * second level, second item
+  * first level, second item
+    # equation:
+      * % this should not be converted
+
+
+# enumerate:
+  * This should be converted to an item
+  \* and this not

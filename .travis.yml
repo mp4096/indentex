@@ -19,8 +19,23 @@ matrix:
     - os: osx
       rust: nightly
 
+# Install Python for integration tests
+addons:
+  apt:
+    packages:
+      - python
+      - python-pip
+      - python-virtualenv
+
+# Activate the Python virtualenv
+before_install:
+  - virtualenv py_integration_tests
+  - source py_integration_tests/bin/activate
+
 script:
   - cargo --version
   - rustc --version
   - cargo build
   - cargo test
+  - cargo run ./tests/
+  - python ./tests/compare_to_reference.py

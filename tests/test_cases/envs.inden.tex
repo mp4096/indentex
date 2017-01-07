@@ -1,0 +1,22 @@
+# equation*:
+  # label: eq:test
+  a + b
+
+# tikzpicture [x = 2 cm]:
+  \draw (0, 0) -- (1, 1);
+
+This is a known bug:
+# equation: % test
+  a + b
+
+This should be converted correctly (also check if all environments are closed at the EOF):
+# a:
+  # b:
+    # c:
+      # d:
+        # e:
+          # f:
+            # g:
+              # h:
+                # i:
+                  foobar

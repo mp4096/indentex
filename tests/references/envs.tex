@@ -1,0 +1,33 @@
+\begin{equation*}
+  \label{eq:test}
+  a + b
+\end{equation*}
+
+\begin{tikzpicture}[x = 2 cm]
+  \draw (0, 0) -- (1, 1);
+\end{tikzpicture}
+
+This is a known bug:
+\equation{% test}
+  a + b
+
+This should be converted correctly (also check if all environments are closed at the EOF):
+\begin{a}
+  \begin{b}
+    \begin{c}
+      \begin{d}
+        \begin{e}
+          \begin{f}
+            \begin{g}
+              \begin{h}
+                \begin{i}
+                  foobar
+                \end{i}
+              \end{h}
+            \end{g}
+          \end{f}
+        \end{e}
+      \end{d}
+    \end{c}
+  \end{b}
+\end{a}
