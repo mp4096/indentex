@@ -5,9 +5,11 @@
 # tikzpicture [x = 2 cm]:
   \draw (0, 0) -- (1, 1);
 
-This is a known bug:
+Comments should be handled correctly:
 # equation: % test
   a + b
+# remark [test percent escaping \%]: % baz
+  foo bar
 
 This should be converted correctly (also check if all environments are closed at the EOF):
 # a:

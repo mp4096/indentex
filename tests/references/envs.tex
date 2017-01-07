@@ -7,9 +7,13 @@
   \draw (0, 0) -- (1, 1);
 \end{tikzpicture}
 
-This is a known bug:
-\equation{% test}
+Comments should be handled correctly:
+\begin{equation} % test
   a + b
+\end{equation}
+\begin{remark}[test percent escaping \%] % baz
+  foo bar
+\end{remark}
 
 This should be converted correctly (also check if all environments are closed at the EOF):
 \begin{a}
