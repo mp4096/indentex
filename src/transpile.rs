@@ -4,6 +4,7 @@ use error::IndentexError;
 
 
 const LINESEP: &'static str = "\n";
+const LATEX_TO_INDENTEX_FACTOR: f64 = 1.5;
 
 
 // Indentation processing
@@ -47,8 +48,12 @@ fn transpile<T: AsRef<str>>(lines: &[T]) -> String {
 
     // The number of environments is not known beforehand
     let mut env_stack: Vec<Environment> = Vec::new();
-    // TODO: Estimate the required string capacity
-    let mut transpiled = String::new();
+
+    // Input size is the sum of all line lengths plus the number of lines (for lineseps)
+    let input_size = lines.iter().fold(0, |sum, l| sum + l.as_ref().len()) + lines.len();
+    // We do not know how much larger the transpiled LaTeX file will be, but we can guess...
+    let indentex_size = (LATEX_TO_INDENTEX_FACTOR * (input_size as f64)).round() as usize;
+    let mut transpiled = String::with_capacity(indentex_size);
 
     let adjusted_indents = scan_indents(lines);
 
