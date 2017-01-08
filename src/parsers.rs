@@ -166,3 +166,98 @@ pub fn process_line<T>(line: T, list_like_active: bool) -> Hashline
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use nom::IResult::{Done, Error, Incomplete};
+    use nom::{ErrorKind, Needed};
+
+    #[test]
+    fn list_env_parser() {
+        use super::list_env_parser;
+
+        let a = b"itemize";
+        let b = b"enumerate*";
+        let c = b"    description  *";
+        let d = b"item";
+        let e = b"foobar";
+
+        assert_eq!(list_env_parser(&a[..]), Done(&b""[..], &a[..]));
+        assert_eq!(list_env_parser(&b[..]), Done(&b"*"[..], &b"enumerate"[..]));
+        assert_eq!(list_env_parser(&c[..]), Done(&b"*"[..], &b"description"[..]));
+        assert_eq!(list_env_parser(&d[..]), Incomplete(Needed::Size(7)));
+        assert_eq!(list_env_parser(&e[..]), Error(error_position!(ErrorKind::Alt, &e[..])));
+    }
+
+    #[test]
+    fn escaped_colon() {
+        use super::escaped_colon;
+
+        let a = br"\:";
+        let b = b"";
+        let c = b"ab";
+
+        assert_eq!(escaped_colon(&a[..]), Done(&b""[..], ':' as u8));
+        assert_eq!(escaped_colon(&b[..]), Incomplete(Needed::Size(1)));
+        assert_eq!(escaped_colon(&c[..]), Error(error_position!(ErrorKind::Char, &c[..])));
+    }
+
+    #[test]
+    fn escaped_percent() {
+        use super::escaped_percent;
+
+        let a = br"\%";
+        let b = b"";
+        let c = b"ab";
+
+        assert_eq!(escaped_percent(&a[..]), Done(&b""[..], '%' as u8));
+        assert_eq!(escaped_percent(&b[..]), Incomplete(Needed::Size(1)));
+        assert_eq!(escaped_percent(&c[..]), Error(error_position!(ErrorKind::Char, &c[..])));
+    }
+
+    #[test]
+    fn name_parser() {
+        use super::name_parser;
+
+        assert_eq!(name_parser(&br"abc"[..]), Done(&b"bc"[..], 'a' as u8));
+        assert_eq!(name_parser(&br"\:abc"[..]), Done(&b"abc"[..], ':' as u8));
+        assert_eq!(name_parser(&b""[..]), Incomplete(Needed::Size(1)));
+
+        for e in vec![b":E", b"%E", b"(E", b"[E", b"{E", b" E", b"\tE"] {
+            assert_eq!(name_parser(&e[..]), Error(error_position!(ErrorKind::Alt, &e[..])));
+        }
+    }
+
+    #[test]
+    fn opts_parser() {
+        use super::opts_parser;
+
+        assert_eq!(opts_parser(&br"abc"[..]), Done(&b"bc"[..], 'a' as u8));
+        assert_eq!(opts_parser(&br"\:abc"[..]), Done(&b"abc"[..], ':' as u8));
+        assert_eq!(opts_parser(&br"\%abc"[..]), Done(&b"abc"[..], '%' as u8));
+        assert_eq!(opts_parser(&br"(abc"[..]), Done(&b"abc"[..], '(' as u8));
+        assert_eq!(opts_parser(&br"[abc"[..]), Done(&b"abc"[..], '[' as u8));
+        assert_eq!(opts_parser(&br" abc"[..]), Done(&b"abc"[..], ' ' as u8));
+        assert_eq!(opts_parser(&b""[..]), Incomplete(Needed::Size(1)));
+
+        for e in vec![b":E", b"%E"] {
+            assert_eq!(opts_parser(&e[..]), Error(error_position!(ErrorKind::Alt, &e[..])));
+        }
+    }
+
+    #[test]
+    fn args_parser() {
+        use super::args_parser;
+
+        assert_eq!(args_parser(&br"abc"[..]), Done(&b"bc"[..], 'a' as u8));
+        assert_eq!(args_parser(&br"\:abc"[..]), Done(&b":abc"[..], '\\' as u8));
+        assert_eq!(args_parser(&br"\%abc"[..]), Done(&b"abc"[..], '%' as u8));
+        assert_eq!(args_parser(&br"(abc"[..]), Done(&b"abc"[..], '(' as u8));
+        assert_eq!(args_parser(&br"[abc"[..]), Done(&b"abc"[..], '[' as u8));
+        assert_eq!(args_parser(&br" abc"[..]), Done(&b"abc"[..], ' ' as u8));
+        assert_eq!(args_parser(&b""[..]), Incomplete(Needed::Size(1)));
+
+        assert_eq!(args_parser(&b"%E"[..]), Error(error_position!(ErrorKind::Alt, &b"%E"[..])));
+    }
+}
