@@ -4,20 +4,20 @@
 [![Build Status](https://travis-ci.org/mp4096/indentex.svg?branch=master)](https://travis-ci.org/mp4096/indentex)
 
 
-# Installation
+## Installation
 
-## From source
+### From source
 Minimal Rust version: 1.13
 
 ```sh
 cargo install --git https://github.com/mp4096/indentex/
 ```
 
-# Usage
+## Usage
 Type `indentex -h` for help:
 
 ```
-indentex 0.3.1
+indentex 0.3.2
 Mikhail Pak <mikhail.pak@tum.de>
 Transpiler for an indentation-based superset of LaTeX
 
