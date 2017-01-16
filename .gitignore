@@ -5,3 +5,4 @@
 **/*.rs.bk
 
 *_indentex.tex
+/tests/blns/blns.inden.tex
