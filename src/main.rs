@@ -5,6 +5,7 @@ extern crate globset;
 extern crate ignore;
 #[macro_use]
 extern crate nom;
+extern crate scoped_threadpool;
 
 // Import helper macros before `parsers`
 #[macro_use]
@@ -37,6 +38,11 @@ fn main() {
             .help("Show transpilation progress")
             .short("v")
             .long("verbose"))
+        .arg(Arg::with_name("jobs")
+            .help("Use multithreading to speed-up file transpiling")
+            .short("j")
+            .long("jobs")
+            .takes_value(true))
         .get_matches();
 
     let path = Path::new(m.value_of("path").unwrap());
@@ -63,24 +69,56 @@ fn main() {
         Vec::new()
     };
 
-    for p in &batch {
-        if verbose {
-            print!("Transpiling file '{}'... ", p.display());
-        }
-        match transpile_file(&p) {
-            Ok(_) => {
-                if verbose {
-                    println!("{}", Green.paint("ok"));
-                }
+    if m.is_present("jobs") {
+
+        use scoped_threadpool::Pool;
+
+        let num_jobs = m.value_of("jobs").unwrap().parse::<u32>().unwrap();
+        let mut pool = Pool::new(num_jobs);
+
+        pool.scoped(|scope| {
+            for p in &batch {
+                scope.execute(move || {
+                    match transpile_file(&p) {
+                        Ok(_) => {
+                            if verbose {
+                                println!("Transpiling file '{}'... {}", p.display(),
+                                    Green.paint("ok"));
+                            }
+                        }
+                        Err(e) => {
+                            ret_val = 8;
+                            if verbose {
+                                println!("Transpiling file '{}'... {}", p.display(),
+                                    Red.paint("failed"));
+                            }
+                            println!("{}", Red.bold().paint(
+                                format!("Could not transpile '{}': {}", p.display(), e)));
+                        }
+                    }
+                });
             }
-            Err(e) => {
-                ret_val = 8;
-                if verbose {
-                    println!("{}", Red.paint("failed"));
-                    print!("    ");
+        });
+    } else {
+        for p in &batch {
+            if verbose {
+                print!("Transpiling file '{}'... ", p.display());
+            }
+            match transpile_file(&p) {
+                Ok(_) => {
+                    if verbose {
+                        println!("{}", Green.paint("ok"));
+                    }
                 }
-                println!("{}",
-                         Red.bold().paint(format!("Could not transpile '{}': {}", p.display(), e)));
+                Err(e) => {
+                    ret_val = 8;
+                    if verbose {
+                        println!("{}", Red.paint("failed"));
+                        print!("    ");
+                    }
+                    println!("{}", Red.bold().paint(
+                        format!("Could not transpile '{}': {}", p.display(), e)));
+                }
             }
         }
     }
