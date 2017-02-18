@@ -16,7 +16,7 @@ mod file_utils;
 mod parsers;
 mod transpile;
 
-enum ErrorCode {
+enum ReturnCode {
     Ok = 0,
     WalkError = 2,
     FileTypeError = 4,
@@ -27,11 +27,11 @@ fn main() {
     use ansi_term::Colour::{Red, Green};
     use clap::{App, Arg};
     use file_utils::walk_indentex_files;
+    use rayon::prelude::*;
+    use std::cmp;
     use std::path::{Path, PathBuf};
     use std::process;
     use transpile::transpile_file;
-    use rayon::prelude::*;
-    use std::cmp;
 
     let m = App::new("indentex")
         .version(crate_version!())
@@ -51,7 +51,7 @@ fn main() {
     let path = Path::new(m.value_of("path").unwrap());
     let verbose = m.is_present("verbose");
 
-    let mut ret_val = ErrorCode::Ok;
+    let mut ret_val = ReturnCode::Ok as i32;
 
     let batch: Vec<PathBuf> = if path.is_file() {
         vec![path.to_path_buf()]
@@ -59,13 +59,13 @@ fn main() {
         match walk_indentex_files(&path) {
             Ok(b) => b,
             Err(e) => {
-                ret_val = ErrorCode::WalkError;
+                ret_val = ReturnCode::WalkError as i32;
                 println!("{}", Red.bold().paint(format!("{}", e)));
                 Vec::new()
             }
         }
     } else {
-        ret_val = ErrorCode::FileTypeError;
+        ret_val = ReturnCode::FileTypeError as i32;
         println!("{}",
                  Red.bold().paint(format!("Error: path '{}' is neither a file nor a directory",
                                           path.display())));
@@ -80,7 +80,7 @@ fn main() {
                              p.display(),
                              Green.paint("ok"));
                 }
-                return ErrorCode::Ok as i32;
+                ReturnCode::Ok
             }
             Err(e) => {
                 if verbose {
@@ -90,11 +90,11 @@ fn main() {
                 }
                 println!("{}",
                          Red.bold().paint(format!("Could not transpile '{}': {}", p.display(), e)));
-                return ErrorCode::TranspilationError as i32;
+                ReturnCode::TranspilationError
             }
-        })
+        } as i32)
         .max()
-        .unwrap();
+        .unwrap_or(ReturnCode::Ok as i32);
 
-    process::exit(cmp::max(ret_val as i32, ret_val_transpilation));
+    process::exit(cmp::max(ret_val, ret_val_transpilation));
 }
