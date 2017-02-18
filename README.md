@@ -17,7 +17,7 @@ cargo install --git https://github.com/mp4096/indentex/
 Type `indentex -h` for help:
 
 ```
-indentex 0.3.2
+indentex 0.4.0
 Mikhail Pak <mikhail.pak@tum.de>
 Transpiler for an indentation-based superset of LaTeX
 
