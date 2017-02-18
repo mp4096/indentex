@@ -22,12 +22,15 @@ Mikhail Pak <mikhail.pak@tum.de>
 Transpiler for an indentation-based superset of LaTeX
 
 USAGE:
-    indentex [FLAGS] <path>
+    indentex [FLAGS] [OPTIONS] <path>
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
     -v, --verbose    Show transpilation progress
+
+OPTIONS:
+    -j, --jobs <jobs>    Use multithreading to speed-up file transpiling
 
 ARGS:
     <path>    Path to a single indentex file or a directory (recursively transpile all indentex files)
