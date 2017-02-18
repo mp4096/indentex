@@ -5,6 +5,7 @@ extern crate globset;
 extern crate ignore;
 #[macro_use]
 extern crate nom;
+extern crate rayon;
 
 // Import helper macros before `parsers`
 #[macro_use]
@@ -23,6 +24,8 @@ fn main() {
     use std::path::{Path, PathBuf};
     use std::process;
     use transpile::transpile_file;
+    use rayon::prelude::*;
+    use std::cmp;
 
     let m = App::new("indentex")
         .version(crate_version!())
@@ -63,27 +66,29 @@ fn main() {
         Vec::new()
     };
 
-    for p in &batch {
-        if verbose {
-            print!("Transpiling file '{}'... ", p.display());
-        }
-        match transpile_file(&p) {
+    let ret_val_transpilation = batch.par_iter()
+        .map(|p| match transpile_file(&p) {
             Ok(_) => {
                 if verbose {
-                    println!("{}", Green.paint("ok"));
+                    println!("Transpiling file '{}'... {}",
+                             p.display(),
+                             Green.paint("ok"));
                 }
+                return 0 as i32;
             }
             Err(e) => {
-                ret_val = 8;
                 if verbose {
-                    println!("{}", Red.paint("failed"));
-                    print!("    ");
+                    println!("Transpiling file '{}'... {}",
+                             p.display(),
+                             Red.paint("failed"));
                 }
                 println!("{}",
                          Red.bold().paint(format!("Could not transpile '{}': {}", p.display(), e)));
+                return 8 as i32;
             }
-        }
-    }
+        })
+        .max()
+        .unwrap();
 
-    process::exit(ret_val);
+    process::exit(cmp::max(ret_val, ret_val_transpilation));
 }
