@@ -37,4 +37,5 @@ script:
   - cargo build
   - cargo test
   - cargo run ./tests/
+  - cargo run ./tests/empty_folder/  # Check how indentex handles empty folders
   - python ./tests/compare_to_reference.py
