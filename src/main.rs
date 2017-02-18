@@ -16,6 +16,12 @@ mod file_utils;
 mod parsers;
 mod transpile;
 
+enum ErrorCode {
+    Ok = 0,
+    WalkError = 2,
+    FileTypeError = 4,
+    TranspilationError = 8,
+}
 
 fn main() {
     use ansi_term::Colour::{Red, Green};
@@ -45,7 +51,7 @@ fn main() {
     let path = Path::new(m.value_of("path").unwrap());
     let verbose = m.is_present("verbose");
 
-    let mut ret_val: i32 = 0;
+    let mut ret_val = ErrorCode::Ok;
 
     let batch: Vec<PathBuf> = if path.is_file() {
         vec![path.to_path_buf()]
@@ -53,13 +59,13 @@ fn main() {
         match walk_indentex_files(&path) {
             Ok(b) => b,
             Err(e) => {
-                ret_val = 2;
+                ret_val = ErrorCode::WalkError;
                 println!("{}", Red.bold().paint(format!("{}", e)));
                 Vec::new()
             }
         }
     } else {
-        ret_val = 4;
+        ret_val = ErrorCode::FileTypeError;
         println!("{}",
                  Red.bold().paint(format!("Error: path '{}' is neither a file nor a directory",
                                           path.display())));
@@ -74,7 +80,7 @@ fn main() {
                              p.display(),
                              Green.paint("ok"));
                 }
-                return 0 as i32;
+                return ErrorCode::Ok as i32;
             }
             Err(e) => {
                 if verbose {
@@ -84,11 +90,11 @@ fn main() {
                 }
                 println!("{}",
                          Red.bold().paint(format!("Could not transpile '{}': {}", p.display(), e)));
-                return 8 as i32;
+                return ErrorCode::TranspilationError as i32;
             }
         })
         .max()
         .unwrap();
 
-    process::exit(cmp::max(ret_val, ret_val_transpilation));
+    process::exit(cmp::max(ret_val as i32, ret_val_transpilation));
 }
