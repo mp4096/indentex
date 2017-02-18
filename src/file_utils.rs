@@ -83,7 +83,7 @@ pub fn write_to_file<T, U>(path: T, data: U) -> Result<(), IndentexError>
 
     let file = File::create(path.as_ref())?;
     let mut buf = BufWriter::new(file);
-    buf.write(data.as_ref().as_bytes())?;
+    buf.write_all(data.as_ref().as_bytes())?;
 
     Ok(())
 }
