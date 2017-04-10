@@ -29,15 +29,15 @@ script:
   - cargo test --no-run
 
 after_success: >
-  wget https://github.com/SimonKagstrom/kcov/archive/v33.tar.gz
-  tar xzf v33.tar.gz
-  mkdir kcov-33/build
-  cd kcov-33/build
-  cmake -DCMAKE_INSTALL_PREFIX:PATH=$LOCAL ..
-  make
-  make install
-  cd ../..
-  rm -rf kcov-33
+  wget https://github.com/SimonKagstrom/kcov/archive/v33.tar.gz &&
+  tar xzf v33.tar.gz &&
+  mkdir kcov-33/build &&
+  cd kcov-33/build &&
+  cmake -DCMAKE_INSTALL_PREFIX:PATH=$LOCAL .. &&
+  make &&
+  make install &&
+  cd ../.. &&
+  rm -rf kcov-33 &&
   for file in target/debug/indentex-*; do
     mkdir -p "target/cov/$(basename $file)";
     kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
