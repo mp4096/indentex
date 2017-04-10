@@ -8,6 +8,15 @@ matrix:
     - os: linux
       dist: trusty
       rust: stable
+      addons:
+        apt:
+          packages:
+            # Install libraries for coverage
+            - binutils-dev
+            - libcurl4-openssl-dev
+            - libdw-dev
+            - libelf-dev
+            - libiberty-dev
     - os: osx
       rust: stable
     # Beta
@@ -22,18 +31,6 @@ matrix:
       rust: nightly
     - os: osx
       rust: nightly
-
-addons:
-  apt:
-    packages:
-      # Install Python for integration tests
-      - python
-      # Install libraries for coverage
-      - binutils-dev
-      - libcurl4-openssl-dev
-      - libdw-dev
-      - libelf-dev
-      - libiberty-dev
 
 before_script:
   - cargo --version --verbose
