@@ -3,39 +3,42 @@ sudo: false
 
 matrix:
   include:
-    # Stable
     - os: linux
+      dist: trusty
       rust: stable
-    - os: osx
-      rust: stable
-    # Beta
-    - os: linux
-      rust: beta
-    - os: osx
-      rust: beta
-    # Nightly
-    - os: linux
-      rust: nightly
-    - os: osx
-      rust: nightly
 
-# Install Python for integration tests
 addons:
   apt:
     packages:
       - python
+      - binutils-dev
+      - cmake
+      - gcc
+      - libcurl4-openssl-dev
+      - libdw-dev
+      - libbfd-dev
+      - libelf-dev
+      - libiberty-dev
+      - zlib1g-dev
 
-# Fetch the big list of naughty strings
 before_script:
-  - >
-    wget -O ./tests/blns/blns.inden.tex
-    https://raw.githubusercontent.com/minimaxir/big-list-of-naughty-strings/master/blns.txt
+  - LOCAL="~/.local"
+  - export PATH=$LOCAL/bin:$PATH
 
 script:
-  - cargo --version
-  - rustc --version
-  - cargo build
-  - cargo test
-  - cargo run ./tests/
-  - cargo run ./tests/empty_folder/  # Check how indentex handles empty folders
-  - python ./tests/compare_to_reference.py
+  - cargo test --no-run
+
+after_success: >
+  wget https://github.com/SimonKagstrom/kcov/archive/v33.tar.gz
+  tar xzf v33.tar.gz
+  mkdir kcov-33/build
+  cd kcov-33/build
+  cmake -DCMAKE_INSTALL_PREFIX:PATH=$LOCAL ..
+  make
+  make install
+  cd ../..
+  rm -rf kcov-33
+  for file in target/debug/indentex-*; do
+    mkdir -p "target/cov/$(basename $file)";
+    kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
+  done
