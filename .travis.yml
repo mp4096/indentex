@@ -1,41 +1,74 @@
 language: rust
+cache: cargo
 sudo: false
 
 matrix:
   include:
     # Stable
     - os: linux
+      dist: trusty
       rust: stable
+      addons:
+        apt:
+          packages:
+            # Install libraries for coverage
+            - binutils-dev
+            - libcurl4-openssl-dev
+            - libdw-dev
+            - libelf-dev
+            - libiberty-dev
     - os: osx
       rust: stable
     # Beta
     - os: linux
+      dist: trusty
       rust: beta
     - os: osx
       rust: beta
     # Nightly
     - os: linux
+      dist: trusty
       rust: nightly
     - os: osx
       rust: nightly
 
-# Install Python for integration tests
-addons:
-  apt:
-    packages:
-      - python
-
-# Fetch the big list of naughty strings
 before_script:
+  - cargo --version --verbose
+  - rustc --version --verbose
+  # Fetch the big list of naughty strings
   - >
     wget -O ./tests/blns/blns.inden.tex
     https://raw.githubusercontent.com/minimaxir/big-list-of-naughty-strings/master/blns.txt
+  # Configure only if we're doing coverage
+  - >
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$TRAVIS_RUST_VERSION" == "stable" ]]; then
+      LOCAL="~/.local" && export PATH=$LOCAL/bin:$PATH;
+    fi
 
 script:
-  - cargo --version
-  - rustc --version
   - cargo build
   - cargo test
-  - cargo run ./tests/
-  - cargo run ./tests/empty_folder/  # Check how indentex handles empty folders
+  - cargo run -- -v ./tests/
+  - cargo run -- -v ./tests/empty_folder/  # Check how indentex handles empty folders
   - python ./tests/compare_to_reference.py
+
+after_success: >
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$TRAVIS_RUST_VERSION" == "stable" ]]; then
+    wget https://github.com/SimonKagstrom/kcov/archive/v33.tar.gz &&
+    tar xzf v33.tar.gz &&
+    mkdir kcov-33/build &&
+    cd kcov-33/build &&
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=$LOCAL .. &&
+    make &&
+    make install &&
+    cd ../.. &&
+    rm -rf kcov-33 &&
+    RUSTFLAGS='-C link-dead-code' cargo test --no-run &&
+    for file in target/debug/indentex-*; do
+      if [[ "${file: -2}" != ".d" ]]; then
+        mkdir -p "target/cov/$(basename $file)";
+        kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
+      fi;
+    done &&
+    kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*;
+  fi
