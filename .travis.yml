@@ -1,4 +1,5 @@
 language: rust
+cache: cargo
 sudo: false
 
 matrix:
@@ -35,6 +36,8 @@ addons:
       - libiberty-dev
 
 before_script:
+  - cargo --version --verbose
+  - rustc --version --verbose
   # Fetch the big list of naughty strings
   - >
     wget -O ./tests/blns/blns.inden.tex
@@ -46,12 +49,10 @@ before_script:
     fi
 
 script:
-  - cargo --version --verbose
-  - rustc --version --verbose
   - cargo build
   - cargo test
-  - cargo run ./tests/
-  - cargo run ./tests/empty_folder/  # Check how indentex handles empty folders
+  - cargo run -- -v ./tests/
+  - cargo run -- -v ./tests/empty_folder/  # Check how indentex handles empty folders
   - python ./tests/compare_to_reference.py
 
 after_success: >
@@ -67,8 +68,10 @@ after_success: >
     rm -rf kcov-33 &&
     RUSTFLAGS='-C link-dead-code' cargo test --no-run &&
     for file in target/debug/indentex-*; do
-      mkdir -p "target/cov/$(basename $file)";
-      kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
+      if [[ "${file: -2}" != ".d" ]]; then
+        mkdir -p "target/cov/$(basename $file)";
+        kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
+      fi;
     done &&
     kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*;
   fi
