@@ -1,11 +1,13 @@
 use nom;
 
 
+#[derive(Debug, PartialEq)]
 pub enum Hashline {
     OpenEnv(Environment),
     PlainLine(String),
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Environment {
     indent_depth: usize,
     name: String,
@@ -174,7 +176,46 @@ mod tests {
     use nom::{ErrorKind, Needed};
 
     #[test]
-    fn environment_latex_tags() {
+    fn itemline_helper() {
+        use super::{Hashline, itemline_helper};
+
+        assert_eq!(itemline_helper(&b"  "[..], &b"foo"[..]),
+                   Hashline::PlainLine("  \\item foo".to_string()));
+        // Test that no whitespace is put after `\item` if no item is given
+        assert_eq!(itemline_helper(&b" "[..], &b""[..]),
+                   Hashline::PlainLine(" \\item".to_string()));
+    }
+
+    #[test]
+    fn process_itemline() {
+        use super::{Hashline, process_itemline};
+
+        // Valid itemlines
+        assert_eq!(process_itemline("*"),
+                   Some(Hashline::PlainLine("\\item".to_string())));
+        assert_eq!(process_itemline("*  "),
+                   Some(Hashline::PlainLine("\\item".to_string())));
+        assert_eq!(process_itemline("  *"),
+                   Some(Hashline::PlainLine("  \\item".to_string())));
+        assert_eq!(process_itemline("  *  "),
+                   Some(Hashline::PlainLine("  \\item".to_string())));
+        assert_eq!(process_itemline("* foo"),
+                   Some(Hashline::PlainLine("\\item foo".to_string())));
+        assert_eq!(process_itemline("  * bar"),
+                   Some(Hashline::PlainLine("  \\item bar".to_string())));
+        assert_eq!(process_itemline("****"),
+                   Some(Hashline::PlainLine("\\item ***".to_string())));
+
+        // Not an itemline
+        assert_eq!(process_itemline("  baz"), None);
+        assert_eq!(process_itemline("qux *"), None);
+        assert_eq!(process_itemline("  abc * def"), None);
+        assert_eq!(process_itemline("  \\*  "), None);
+        assert_eq!(process_itemline("\\*  "), None);
+    }
+
+    #[test]
+    fn environment_methods() {
         use super::Environment;
 
         let env_1 = Environment {
