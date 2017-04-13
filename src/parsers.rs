@@ -175,14 +175,70 @@ mod tests {
     use nom::IResult::{Done, Error, Incomplete};
     use nom::{ErrorKind, Needed};
 
+    macro_rules! nil { () => ("".as_bytes()); }
+    macro_rules! ws_1 { () => (" ".as_bytes()); }
+    macro_rules! ws_2 { () => ("  ".as_bytes()); }
+    macro_rules! ws_4 { () => ("    ".as_bytes()); }
+
+    macro_rules! foo { () => ("foo".as_bytes()); }
+    macro_rules! bar { () => ("bar".as_bytes()); }
+    macro_rules! qux { () => ("qux".as_bytes()); }
+
+    #[test]
+    fn hashline_helper_plain_lines() {
+        use super::{Hashline, hashline_helper};
+
+        assert_eq!(hashline_helper(nil!(), foo!(), nil!(), bar!(), nil!()),
+                   Hashline::PlainLine("\\foo{bar}".to_string()));
+        assert_eq!(hashline_helper(ws_2!(), foo!(), nil!(), bar!(), qux!()),
+                   Hashline::PlainLine("  \\foo{bar} qux".to_string()));
+        assert_eq!(hashline_helper(ws_4!(), foo!(), bar!(), qux!(), nil!()),
+                   Hashline::PlainLine("    \\foobar{qux}".to_string()));
+    }
+
+    #[test]
+    fn hashline_helper_environments() {
+        use super::{Hashline, Environment, hashline_helper};
+
+        let env_ref_1 = Environment {
+            indent_depth: 0,
+            name: "foo".to_string(),
+            opts: "bar".to_string(),
+            comment: "".to_string(),
+            is_list_like: false,
+        };
+        assert_eq!(hashline_helper(nil!(), foo!(), bar!(), nil!(), nil!()),
+                   Hashline::OpenEnv(env_ref_1));
+
+        let env_ref_2 = Environment {
+            indent_depth: 2,
+            name: "foo".to_string(),
+            opts: "".to_string(),
+            comment: "bar".to_string(),
+            is_list_like: false,
+        };
+        assert_eq!(hashline_helper(ws_2!(), foo!(), nil!(), nil!(), bar!()),
+                   Hashline::OpenEnv(env_ref_2));
+
+        let env_ref_3 = Environment {
+            indent_depth: 4,
+            name: "foo".to_string(),
+            opts: "bar".to_string(),
+            comment: "qux".to_string(),
+            is_list_like: false,
+        };
+        assert_eq!(hashline_helper(ws_4!(), foo!(), bar!(), nil!(), qux!()),
+                   Hashline::OpenEnv(env_ref_3));
+    }
+
     #[test]
     fn itemline_helper() {
         use super::{Hashline, itemline_helper};
 
-        assert_eq!(itemline_helper(&b"  "[..], &b"foo"[..]),
+        assert_eq!(itemline_helper(ws_2!(), foo!()),
                    Hashline::PlainLine("  \\item foo".to_string()));
         // Test that no whitespace is put after `\item` if no item is given
-        assert_eq!(itemline_helper(&b" "[..], &b""[..]),
+        assert_eq!(itemline_helper(ws_1!(), nil!()),
                    Hashline::PlainLine(" \\item".to_string()));
     }
 
@@ -267,11 +323,10 @@ mod tests {
         use super::escaped_colon;
 
         let a = br"\:";
-        let b = b"";
         let c = b"ab";
 
         assert_eq!(escaped_colon(&a[..]), Done(&b""[..], ':' as u8));
-        assert_eq!(escaped_colon(&b[..]), Incomplete(Needed::Size(1)));
+        assert_eq!(escaped_colon(nil!()), Incomplete(Needed::Size(1)));
         assert_eq!(escaped_colon(&c[..]), Error(error_position!(ErrorKind::Char, &c[..])));
     }
 
@@ -280,11 +335,10 @@ mod tests {
         use super::escaped_percent;
 
         let a = br"\%";
-        let b = b"";
         let c = b"ab";
 
         assert_eq!(escaped_percent(&a[..]), Done(&b""[..], '%' as u8));
-        assert_eq!(escaped_percent(&b[..]), Incomplete(Needed::Size(1)));
+        assert_eq!(escaped_percent(nil!()), Incomplete(Needed::Size(1)));
         assert_eq!(escaped_percent(&c[..]), Error(error_position!(ErrorKind::Char, &c[..])));
     }
 
