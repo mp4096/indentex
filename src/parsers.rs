@@ -183,6 +183,7 @@ mod tests {
     macro_rules! foo { () => ("foo".as_bytes()); }
     macro_rules! bar { () => ("bar".as_bytes()); }
     macro_rules! qux { () => ("qux".as_bytes()); }
+    macro_rules! itemize { () => ("itemize".as_bytes()); }
 
     #[test]
     fn hashline_helper_plain_lines() {
@@ -229,6 +230,16 @@ mod tests {
         };
         assert_eq!(hashline_helper(ws_4!(), foo!(), bar!(), nil!(), qux!()),
                    Hashline::OpenEnv(env_ref_3));
+
+        let env_ref_4 = Environment {
+            indent_depth: 0,
+            name: "itemize".to_string(),
+            opts: "bar".to_string(),
+            comment: "qux".to_string(),
+            is_list_like: true,
+        };
+        assert_eq!(hashline_helper(nil!(), itemize!(), bar!(), nil!(), qux!()),
+                   Hashline::OpenEnv(env_ref_4));
     }
 
     #[test]
