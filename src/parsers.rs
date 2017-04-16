@@ -18,18 +18,20 @@ pub struct Environment {
 
 impl Environment {
     pub fn latex_begin(&self) -> String {
-        format!(r"{:ind$}\begin{{{}}}{}{:comment_sep$}{}",
-                "",
-                self.name,
-                self.opts,
-                "",
-                self.comment,
+        format!(r"{dummy:ind$}\begin{{{name}}}{opts}{comment_sep}{comment}",
+                name = self.name,
+                opts = self.opts,
+                comment = self.comment,
+                dummy = "",
                 ind = self.indent_depth,
-                comment_sep = if self.comment.is_empty() { 0 } else { 1 })
+                comment_sep = if self.comment.is_empty() { "" } else { " " })
     }
 
     pub fn latex_end(&self) -> String {
-        format!(r"{:ind$}\end{{{}}}", "", self.name, ind = self.indent_depth)
+        format!(r"{dummy:ind$}\end{{{name}}}",
+                name = self.name,
+                dummy = "",
+                ind = self.indent_depth)
     }
 
     pub fn indent_depth(&self) -> usize {
@@ -89,14 +91,13 @@ fn hashline_helper(ws: &[u8], name: &[u8], opts: &[u8], args: &[u8], comment: &[
     } else {
         // If there are some args, it's a single-line command
         let ws_utf8 = from_utf8(ws).unwrap();
-        PlainLine(format!(r"{}\{}{}{{{}}}{:comment_sep$}{}",
-                          ws_utf8,
-                          name_utf8,
-                          opts_utf8,
-                          args_utf8,
-                          "",
-                          comment_utf8,
-                          comment_sep = if comment_utf8.is_empty() { 0 } else { 1 }))
+        PlainLine(format!(r"{indent}\{name}{opts}{{{args}}}{comment_sep}{comment}",
+                          indent = ws_utf8,
+                          name = name_utf8,
+                          opts = opts_utf8,
+                          args = args_utf8,
+                          comment_sep = if comment_utf8.is_empty() { "" } else { " " },
+                          comment = comment_utf8))
     }
 }
 
@@ -130,11 +131,10 @@ fn itemline_helper(ws: &[u8], item: &[u8]) -> Hashline {
     let ws_utf8 = from_utf8(ws).unwrap();
     let item_utf8 = from_utf8(item).unwrap().trim();
 
-    PlainLine(format!(r"{}\item{:item_sep$}{}",
-                      ws_utf8,
-                      "",
-                      item_utf8,
-                      item_sep = if item_utf8.is_empty() { 0 } else { 1 }))
+    PlainLine(format!(r"{indent}\item{item_sep}{content}",
+                      indent = ws_utf8,
+                      content = item_utf8,
+                      item_sep = if item_utf8.is_empty() { "" } else { " " }))
 }
 
 // Itemline processing
