@@ -110,5 +110,31 @@ mod tests {
         assert_eq!(count_left_indent(""), None);
         assert_eq!(count_left_indent("foo"), Some(0));
         assert_eq!(count_left_indent("  bar"), Some(2));
+        // We assume that the input has no trailing whitespaces
+        // This is not a bug (but not a nice behaviour either)
+        assert_eq!(count_left_indent("   "), Some(3));
+    }
+
+    #[test]
+    fn scan_indents() {
+        use super::scan_indents;
+
+        // Always add a zero at the end
+        let a = [" a"];
+        assert_eq!(scan_indents(&a), [1, 0]);
+        assert_eq!(scan_indents(&a).capacity(), 2);
+        // Indents are propagated backwards
+        let b = ["  b", "b", "", "  b"];
+        assert_eq!(scan_indents(&b), [2, 0, 2, 2, 0]);
+        assert_eq!(scan_indents(&b).capacity(), 5);
+        // We assume that the input has no trailing whitespaces
+        // This is not a bug (but not a nice behaviour either)
+        let c = ["", "   "];
+        assert_eq!(scan_indents(&c), [3, 3, 0]);
+        assert_eq!(scan_indents(&c).capacity(), 3);
+
+        let d = ["d", " d", "", " d", "", "   d", "  d", "     d"];
+        assert_eq!(scan_indents(&d), [0, 1, 1, 1, 3, 3, 2, 5, 0]);
+        assert_eq!(scan_indents(&d).capacity(), 9);
     }
 }
