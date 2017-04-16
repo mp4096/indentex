@@ -154,18 +154,10 @@ pub fn process_line<T>(line: T, list_like_active: bool) -> Hashline
 {
     use self::Hashline::PlainLine;
 
-    match process_hashline(&line) {
-        Some(r) => r,
-        None => {
-            if list_like_active {
-                match process_itemline(&line) {
-                    Some(r) => r,
-                    None => PlainLine(line.as_ref().to_string()),
-                }
-            } else {
-                PlainLine(line.as_ref().to_string())
-            }
-        }
+    match (process_hashline(&line), list_like_active) {
+        (Some(r), _) => r,
+        (None, true) => process_itemline(&line).unwrap_or(PlainLine(line.as_ref().to_string())),
+        (None, false) => PlainLine(line.as_ref().to_string()),
     }
 }
 
