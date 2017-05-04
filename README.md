@@ -2,6 +2,7 @@
 
 
 [![Build Status](https://travis-ci.org/mp4096/indentex.svg?branch=master)](https://travis-ci.org/mp4096/indentex)
+[![Dependency Status](https://www.versioneye.com/user/projects/590b1f9dda0c25003951c568/badge.svg)](https://www.versioneye.com/user/projects/590b1f9dda0c25003951c568)
 [![Coverage Status](https://coveralls.io/repos/github/mp4096/indentex/badge.svg?branch=master)](https://coveralls.io/github/mp4096/indentex?branch=master)
 
 
