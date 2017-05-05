@@ -31,6 +31,8 @@ matrix:
       rust: nightly
     - os: osx
       rust: nightly
+  allow_failures:
+    - rust: nightly
 
 before_script:
   - cargo --version --verbose
