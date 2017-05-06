@@ -41,7 +41,7 @@ fn scan_indents<T: AsRef<str>>(lines: &[T]) -> Vec<usize> {
 
 
 // Transpilation
-fn transpile<T: AsRef<str>>(lines: &[T]) -> String {
+fn transpile<T: AsRef<str>>(lines: &[T], flatten_output: bool) -> String {
     use parsers::Environment;
     use parsers::Hashline::{PlainLine, OpenEnv};
     use parsers::process_line;
@@ -71,7 +71,11 @@ fn transpile<T: AsRef<str>>(lines: &[T]) -> String {
                 tag_begin
             }
         };
-        transpiled.push_str(&tl);
+        if flatten_output {
+            transpiled.push_str(&tl.trim_left());
+        } else {
+            transpiled.push_str(&tl);
+        }
         transpiled.push_str(LINESEP);
 
         // Check if we are in an environment and close as many as needed
@@ -81,7 +85,11 @@ fn transpile<T: AsRef<str>>(lines: &[T]) -> String {
         } {
             // `unwrap()` is safe here since we have already checked if the stack is empty
             let tag_end = env_stack.pop().unwrap().latex_end();
-            transpiled.push_str(&tag_end);
+            if flatten_output {
+                transpiled.push_str(&tag_end.trim_left());
+            } else {
+                transpiled.push_str(&tag_end);
+            }
             transpiled.push_str(LINESEP);
         }
     }
@@ -89,11 +97,11 @@ fn transpile<T: AsRef<str>>(lines: &[T]) -> String {
     transpiled
 }
 
-pub fn transpile_file<T: AsRef<Path>>(path: T) -> Result<(), IndentexError> {
+pub fn transpile_file<T: AsRef<Path>>(path: T, flatten_output: bool) -> Result<(), IndentexError> {
     use file_utils::{read_and_trim_lines, rename_indentex_file, write_to_file};
 
     let lines = read_and_trim_lines(path.as_ref())?;
-    let transpiled_text = transpile(&lines);
+    let transpiled_text = transpile(&lines, flatten_output);
     let path_out = rename_indentex_file(path)?;
     write_to_file(path_out, &transpiled_text)?;
 

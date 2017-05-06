@@ -46,10 +46,14 @@ fn main() {
             .help("Show transpilation progress")
             .short("v")
             .long("verbose"))
+        .arg(Arg::with_name("flatten-output")
+            .help("Remove all indentation from the output")
+            .long("flatten-output"))
         .get_matches();
 
     let path = Path::new(m.value_of("path").unwrap());
     let verbose = m.is_present("verbose");
+    let flatten_output = m.is_present("flatten-output");
 
     let mut ret_val = ReturnCode::Ok as i32;
 
@@ -73,7 +77,7 @@ fn main() {
     };
 
     let ret_val_transpilation = batch.par_iter()
-        .map(|p| match transpile_file(&p) {
+        .map(|p| match transpile_file(&p, flatten_output) {
             Ok(_) => {
                 if verbose {
                     println!("Transpiling file '{}'... {}",
