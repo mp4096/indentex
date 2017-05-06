@@ -27,9 +27,10 @@ USAGE:
     indentex [FLAGS] <path>
 
 FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-    -v, --verbose    Show transpilation progress
+        --flatten-output    Remove all indentation from the output
+    -h, --help              Prints help information
+    -V, --version           Prints version information
+    -v, --verbose           Show transpilation progress
 
 ARGS:
     <path>    Path to a single indentex file or a directory (recursively transpile all indentex files)
