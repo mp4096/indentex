@@ -11,10 +11,10 @@ publish = false
 
 [dependencies]
 ansi_term = "^0.9.0"
-clap = "^2.24.0"
-globset = "^0.1.4"
-ignore = "^0.1.9"
-nom = "^2.2.1"
+clap = "^2.24.1"
+globset = "^0.2.0"
+ignore = "^0.2.0"
+nom = "^3.0.0"
 rayon = "^0.7.0"
 
 
