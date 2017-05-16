@@ -49,8 +49,8 @@ named!(
     list_env_parser<&[u8]>,
     ws!(alt!(tag!("itemize") | tag!("enumerate") | tag!("description")))
 );
-named!(escaped_colon<u8>, preceded!(specific_byte!('\\' as u8), specific_byte!(':' as u8)));
-named!(escaped_percent<u8>, preceded!(specific_byte!('\\' as u8), specific_byte!('%' as u8)));
+named!(escaped_colon<u8>, preceded!(specific_byte!(b'\\'), specific_byte!(b':')));
+named!(escaped_percent<u8>, preceded!(specific_byte!(b'\\'), specific_byte!(b'%')));
 named!(name_parser<u8>, alt!(escaped_colon | none_of_bytes_as_bytes!(b":%([{ \t")));
 named!(opts_parser<u8>, alt!(escaped_colon | escaped_percent | none_of_bytes_as_bytes!(b":%")));
 named!(args_parser<u8>, alt!(escaped_percent | none_of_bytes_as_bytes!(b"%")));
@@ -64,7 +64,7 @@ named!(
         tag!(":") >>
         args: many0!(args_parser) >>
         comment: call!(nom::rest) >>
-        (hashline_helper(ws.unwrap_or(&b""[..]), &name, &opts, &args, &comment))
+        (hashline_helper(ws.unwrap_or(&b""[..]), &name, &opts, &args, comment))
     )
 );
 #[inline]
@@ -156,7 +156,7 @@ pub fn process_line<T>(line: T, list_like_active: bool) -> Hashline
 
     match (process_hashline(&line), list_like_active) {
         (Some(r), _) => r,
-        (None, true) => process_itemline(&line).unwrap_or(PlainLine(line.as_ref().to_string())),
+        (None, true) => process_itemline(&line).unwrap_or_else(|| PlainLine(line.as_ref().to_string())),
         (None, false) => PlainLine(line.as_ref().to_string()),
     }
 }

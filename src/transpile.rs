@@ -72,7 +72,7 @@ fn transpile<T: AsRef<str>>(lines: &[T], flatten_output: bool) -> String {
             }
         };
         if flatten_output {
-            transpiled.push_str(&tl.trim_left());
+            transpiled.push_str(tl.trim_left());
         } else {
             transpiled.push_str(&tl);
         }
@@ -86,7 +86,7 @@ fn transpile<T: AsRef<str>>(lines: &[T], flatten_output: bool) -> String {
             // `unwrap()` is safe here since we have already checked if the stack is empty
             let tag_end = env_stack.pop().unwrap().latex_end();
             if flatten_output {
-                transpiled.push_str(&tag_end.trim_left());
+                transpiled.push_str(tag_end.trim_left());
             } else {
                 transpiled.push_str(&tag_end);
             }
