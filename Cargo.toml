@@ -11,7 +11,7 @@ publish = false
 
 [dependencies]
 ansi_term = "^0.9.0"
-clap = "^2.24.1"
+clap = "^2.24.2"
 globset = "^0.2.0"
 ignore = "^0.2.0"
 nom = "^3.0.0"
