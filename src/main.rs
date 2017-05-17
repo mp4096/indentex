@@ -31,7 +31,7 @@ fn main() {
     use std::cmp;
     use std::path::{Path, PathBuf};
     use std::process;
-    use transpile::transpile_file;
+    use transpile::{transpile_file, TranspileOptions};
 
     let m = App::new("indentex")
         .version(crate_version!())
@@ -49,11 +49,17 @@ fn main() {
         .arg(Arg::with_name("flatten-output")
             .help("Remove all indentation from the output")
             .long("flatten-output"))
+        .arg(Arg::with_name("disable-do-not-edit")
+            .help("Disable prepending the 'DO NOT EDIT' notice")
+            .long("disable-do-not-edit"))
         .get_matches();
 
     let path = Path::new(m.value_of("path").unwrap());
     let verbose = m.is_present("verbose");
-    let flatten_output = m.is_present("flatten-output");
+    let options = TranspileOptions {
+        flatten_output: m.is_present("flatten-output"),
+        prepend_do_not_edit_notice: ! m.is_present("disable-do-not-edit"),
+    };
 
     let mut ret_val = ReturnCode::Ok as i32;
 
@@ -77,7 +83,7 @@ fn main() {
     };
 
     let ret_val_transpilation = batch.par_iter()
-        .map(|p| match transpile_file(&p, flatten_output) {
+        .map(|p| match transpile_file(&p, &options) {
             Ok(_) => {
                 if verbose {
                     println!("Transpiling file '{}'... {}",
