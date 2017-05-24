@@ -1,4 +1,3 @@
-extern crate ansi_term;
 #[macro_use]
 extern crate clap;
 extern crate globset;
@@ -24,7 +23,6 @@ enum ReturnCode {
 }
 
 fn main() {
-    use ansi_term::Colour::{Red, Green};
     use clap::{App, Arg};
     use file_utils::walk_indentex_files;
     use rayon::prelude::*;
@@ -70,15 +68,13 @@ fn main() {
             Ok(b) => b,
             Err(e) => {
                 ret_val = ReturnCode::WalkError as i32;
-                println!("{}", Red.bold().paint(format!("{}", e)));
+                println!("{}", e);
                 Vec::new()
             }
         }
     } else {
         ret_val = ReturnCode::FileTypeError as i32;
-        println!("{}",
-                 Red.bold().paint(format!("Error: path '{}' is neither a file nor a directory",
-                                          path.display())));
+        println!("Error: path '{}' is neither a file nor a directory", path.display());
         Vec::new()
     };
 
@@ -86,20 +82,15 @@ fn main() {
         .map(|p| match transpile_file(&p, &options) {
             Ok(_) => {
                 if verbose {
-                    println!("Transpiling file '{}'... {}",
-                             p.display(),
-                             Green.paint("ok"));
+                    println!("Transpiling file '{}'... ok", p.display());
                 }
                 ReturnCode::Ok
             }
             Err(e) => {
                 if verbose {
-                    println!("Transpiling file '{}'... {}",
-                             p.display(),
-                             Red.paint("failed"));
+                    println!("Transpiling file '{}'... failed", p.display());
                 }
-                println!("{}",
-                         Red.bold().paint(format!("Could not transpile '{}': {}", p.display(), e)));
+                println!("Could not transpile '{}': {}", p.display(), e);
                 ReturnCode::TranspilationError
             }
         } as i32)
