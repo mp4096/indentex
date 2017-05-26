@@ -10,7 +10,7 @@
     <Product Id="*" UpgradeCode="$(var.ProductUpgradeCode)"
         Name="Indentex" Version="$(var.ProductVersion)" Manufacturer="Mikhail Pak" Language="1033">
 
-        <Package InstallerVersion="200" Compressed="yes" Comments="Windows Installer Package" />
+        <Package InstallerVersion="200" Compressed="yes" Comments="Windows Installer Package" InstallScope="perUser" />
         <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
         <!--Icon Id="ProductIcon" SourceFile="example.ico"/-->
@@ -30,15 +30,14 @@
         <Condition Message="A newer version of this software is already installed.">NOT NEWERVERSIONDETECTED</Condition>
 
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFilesFolder">
+            <Directory Id="LocalAppDataFolder">
                 <Directory Id="INSTALLDIR" Name="Indentex">
                     <Component Id="MainExecutable" Guid="12345678-1234-1234-1234-222222222123">
                         <File Id="IndentexEXE" Source="..\..\target\release\indentex.exe" Vital="yes" />
                         <RemoveFolder Id="INSTALLDIR" On="uninstall" />
-                    </Component>
-                    <Component Id="UpdateUserPath"
-                                 Guid="12345678-1234-1234-1234-222222222124"
-                                 KeyPath="yes">
+                        <RegistryKey Root="HKCU" Key="Software\Indentex">
+                            <RegistryValue Name="MainExe" Value="1" KeyPath="yes" Type="integer" />
+                        </RegistryKey>
                         <Environment Id="SetUserPath" Name="PATH" Action="set"
                                    Permanent="no" System="no" Part="last"
                                    Value="[INSTALLDIR]" />
@@ -53,7 +52,7 @@
 
         <Feature Id="DefaultFeature" Level="1">
             <ComponentRef Id="MainExecutable"/>
-            <ComponentRef Id="UpdateUserPath"/>
+            <!--<ComponentRef Id="UpdateUserPath"/>-->
         </Feature>
 
         <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
