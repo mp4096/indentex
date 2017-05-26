@@ -39,9 +39,9 @@
                     <Component Id="UpdateUserPath"
                                  Guid="12345678-1234-1234-1234-222222222124"
                                  KeyPath="yes">
-                        <Environment Id='SetUserPath' Name='PATH' Action='set'
-                                   Permanent='no' System='no' Part='last'
-                                   Value='[INSTALLDIR]' />
+                        <Environment Id="SetUserPath" Name="PATH" Action="set"
+                                   Permanent="no" System="no" Part="last"
+                                   Value="[INSTALLDIR]" />
                     </Component>
                 </Directory>
             </Directory>
