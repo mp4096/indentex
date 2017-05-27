@@ -19,7 +19,6 @@
         <Property Id="ARPHELPLINK" Value="https://github.com/mp4096/indentex" />
         <Property Id="ARPURLINFOABOUT" Value="https://github.com/mp4096/indentex" />
         <Property Id="ARPNOREPAIR" Value="1" />
-        <!--<Property Id="ARPNOMODIFY" Value="1"/>-->
 
         <Upgrade Id="$(var.ProductUpgradeCode)">
             <UpgradeVersion Minimum="$(var.ProductVersion)" OnlyDetect="yes"
@@ -37,7 +36,7 @@
                         <File Id="IndentexEXE" Source="..\..\target\release\indentex.exe" Vital="yes" />
                         <RemoveFolder Id="INSTALLDIR" On="uninstall" />
                         <RegistryKey Root="HKCU" Key="Software\Indentex">
-                            <RegistryValue Name="MainExe" Value="1" KeyPath="yes" Type="integer" />
+                            <RegistryValue Name="Version" Value="[ProductVersion]" KeyPath="yes" Type="string" />
                         </RegistryKey>
                         <Environment Id="SetUserPath" Name="PATH" Action="set"
                                    Permanent="no" System="no" Part="last"
