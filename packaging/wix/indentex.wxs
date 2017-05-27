@@ -5,6 +5,7 @@
 
 <!-- NEVER CHANGE GUIDs! -->
 <?define ProductUpgradeCode = "12345678-1234-1234-1234-111111111123"?>
+<?define MainExecutableGuid = "12345678-1234-1234-1234-222222222123"?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Product Id="*" UpgradeCode="$(var.ProductUpgradeCode)"
@@ -32,7 +33,7 @@
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="LocalAppDataFolder">
                 <Directory Id="INSTALLDIR" Name="Indentex">
-                    <Component Id="MainExecutable" Guid="12345678-1234-1234-1234-222222222123">
+                    <Component Id="MainExecutable" Guid="$(var.MainExecutableGuid)">
                         <File Id="IndentexEXE" Source="..\..\target\release\indentex.exe" Vital="yes" />
                         <RemoveFolder Id="INSTALLDIR" On="uninstall" />
                         <RegistryKey Root="HKCU" Key="Software\Indentex">
