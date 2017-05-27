@@ -34,6 +34,7 @@ before_test:
     -FileName ./tests/blns/blns.inden.tex
 
 test_script:
+  - set RUSTFLAGS='-C target-feature=+crt-static'
   - cargo build
   - cargo test
   - cargo run -- -v ./tests/
