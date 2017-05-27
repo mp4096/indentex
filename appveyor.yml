@@ -7,12 +7,19 @@ environment:
   # Stable 64-bit MSVC
     - channel: stable
       target: x86_64-pc-windows-msvc
+      static: 0
   # Beta 64-bit MSVC
     - channel: beta
       target: x86_64-pc-windows-msvc
+      static: 0
   # Nightly 64-bit MSVC
     - channel: nightly
       target: x86_64-pc-windows-msvc
+      static: 0
+  # Nightly 64-bit MSVC + static CRT linking
+    - channel: nightly
+      target: x86_64-pc-windows-msvc
+      static: 1
 
 matrix:
   allow_failures:
@@ -34,7 +41,7 @@ before_test:
     -FileName ./tests/blns/blns.inden.tex
 
 test_script:
-  - set RUSTFLAGS='-C target-feature=+crt-static'
+  - if [%static%]==[1] (set "RUSTFLAGS=-C target-feature=+crt-static")
   - cargo build
   - cargo test
   - cargo run -- -v ./tests/
