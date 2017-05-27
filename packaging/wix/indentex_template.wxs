@@ -14,8 +14,6 @@
         <Package InstallerVersion="200" Compressed="yes" Comments="Windows Installer Package" InstallScope="perUser" />
         <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
-        <!--Icon Id="ProductIcon" SourceFile="example.ico"/-->
-        <!--Property Id="ARPPRODUCTICON" Value="ProductIcon"/-->
         <Property Id="ARPHELPLINK" Value="https://github.com/mp4096/indentex" />
         <Property Id="ARPURLINFOABOUT" Value="https://github.com/mp4096/indentex" />
         <Property Id="ARPNOREPAIR" Value="1" />
@@ -52,7 +50,6 @@
 
         <Feature Id="DefaultFeature" Level="1">
             <ComponentRef Id="MainExecutable"/>
-            <!--<ComponentRef Id="UpdateUserPath"/>-->
         </Feature>
 
         <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
