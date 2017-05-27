@@ -6,8 +6,3 @@
 
 *_indentex.tex
 /tests/blns/blns.inden.tex
-
-# WiX
-*.msi
-*.wixobj
-*.wixpdb

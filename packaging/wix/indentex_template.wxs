@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 
 <!-- Update version for every release -->
-<?define ProductVersion = "0.4.0"?>
+<?define ProductVersion = "$version"?>
 
 <!-- NEVER CHANGE GUIDs! -->
 <?define ProductUpgradeCode = "12345678-1234-1234-1234-111111111123"?>
 <?define MainExecutableGuid = "12345678-1234-1234-1234-222222222123"?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" UpgradeCode="$(var.ProductUpgradeCode)"
-        Name="Indentex" Version="$(var.ProductVersion)" Manufacturer="Mikhail Pak" Language="1033">
+    <Product Id="*" UpgradeCode="$$(var.ProductUpgradeCode)"
+        Name="Indentex" Version="$$(var.ProductVersion)" Manufacturer="Mikhail Pak" Language="1033">
 
         <Package InstallerVersion="200" Compressed="yes" Comments="Windows Installer Package" InstallScope="perUser" />
         <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
@@ -20,10 +20,10 @@
         <Property Id="ARPURLINFOABOUT" Value="https://github.com/mp4096/indentex" />
         <Property Id="ARPNOREPAIR" Value="1" />
 
-        <Upgrade Id="$(var.ProductUpgradeCode)">
-            <UpgradeVersion Minimum="$(var.ProductVersion)" OnlyDetect="yes"
+        <Upgrade Id="$$(var.ProductUpgradeCode)">
+            <UpgradeVersion Minimum="$$(var.ProductVersion)" OnlyDetect="yes"
                 Property="NEWERVERSIONDETECTED" />
-            <UpgradeVersion Minimum="0.0.0" Maximum="$(var.ProductVersion)"
+            <UpgradeVersion Minimum="0.0.0" Maximum="$$(var.ProductVersion)"
                 IncludeMinimum="yes" IncludeMaximum="no"
                 Property="OLDERVERSIONBEINGUPGRADED" />
         </Upgrade>
@@ -32,7 +32,7 @@
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="LocalAppDataFolder">
                 <Directory Id="INSTALLDIR" Name="Indentex">
-                    <Component Id="MainExecutable" Guid="$(var.MainExecutableGuid)">
+                    <Component Id="MainExecutable" Guid="$$(var.MainExecutableGuid)">
                         <File Id="IndentexEXE" Source="..\..\target\release\indentex.exe" Vital="yes" />
                         <RemoveFolder Id="INSTALLDIR" On="uninstall" />
                         <RegistryKey Root="HKCU" Key="Software\Indentex">
