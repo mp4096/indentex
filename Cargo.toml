@@ -30,6 +30,7 @@ globset = "^0.2.0"
 ignore = "^0.2.0"
 nom = "^3.0.0"
 rayon = "^0.7.0"
+term-painter = "^0.2.3"
 
 
 [profile.release]

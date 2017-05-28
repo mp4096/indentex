@@ -5,6 +5,7 @@ extern crate ignore;
 #[macro_use]
 extern crate nom;
 extern crate rayon;
+extern crate term_painter;
 
 // Import helper macros before `parsers`
 #[macro_use]
@@ -29,6 +30,8 @@ fn main() {
     use std::cmp;
     use std::path::{Path, PathBuf};
     use std::process;
+    use term_painter::Color::{Green, Red};
+    use term_painter::ToStyle;
     use transpile::{transpile_file, TranspileOptions};
 
     let m = App::new("indentex")
