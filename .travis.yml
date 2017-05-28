@@ -89,4 +89,5 @@ deploy:
   file: "target/debian/indentex_*_amd64.deb"
   skip_cleanup: true
   on:
+    condition: $TRAVIS_RUST_VERSION = stable
     tags: true
