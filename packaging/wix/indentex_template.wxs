@@ -4,8 +4,9 @@
 <?define ProductVersion = "$version"?>
 
 <!-- NEVER CHANGE GUIDs! -->
-<?define ProductUpgradeCode = "12345678-1234-1234-1234-111111111123"?>
-<?define MainExecutableGuid = "12345678-1234-1234-1234-222222222123"?>
+<!-- generated on linux with `uuidgen -r` -->
+<?define ProductUpgradeCode = "27bad626-dfc2-4c66-8c30-0a4a5473891b"?>
+<?define MainExecutableGuid = "6e24a7b6-04b2-4afb-801d-9fa66960717b"?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Product Id="*" UpgradeCode="$$(var.ProductUpgradeCode)"
