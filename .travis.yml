@@ -81,6 +81,8 @@ after_success: >
 before_deploy:
   - cargo install --git https://github.com/mmstick/cargo-deb
   - cargo build --release --target=x86_64-unknown-linux-gnu
+  - rm -rf "target/release"
+  - mv "target/x86_64-unknown-linux-gnu/release" "target/"
   - cargo deb --no-build
 
 deploy:
