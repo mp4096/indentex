@@ -31,11 +31,19 @@ matrix:
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
+  - if [%static%]==[1] (choco install pandoc)
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
 
-build: false
+build_script:
+  - >
+    if [%static%]==[1] (
+      cargo build --release
+      cd .\packaging\windows_wix
+      pip install -r requirements.txt
+      powershell .\make_installer.ps1
+    )
 
 before_test:
   - >
@@ -55,19 +63,13 @@ artifacts:
   - path: packaging\windows_wix\indentex.msi
     name: indentex_installer
 
-before_deploy:
-  - cargo build --release
-  - choco install pandoc
-  - cd .\packaging\windows_wix
-  - pip install -r requirements.txt
-  - .\make_installer.ps1
-
 deploy:
   - provider: GitHub
     artifact: indentex_installer
     auth_token: 9QypfhMr/2TVe8WSZNepJafno+SmV+DmNv+GczEgQ8geVN2Wz0pvUZDkzp4PdcsV
     on:
       appveyor_repo_tag: true
+      appveyor_repo_name: mp4096/indentex
       channel: nightly
       target: x86_64-pc-windows-msvc
       static: 1
