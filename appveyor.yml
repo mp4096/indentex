@@ -37,13 +37,10 @@ install:
   - cargo -vV
 
 build_script:
-  ps: >-
-    if ($env:static = "1") {
-      cargo build --release
-      cd .\packaging\windows_wix
-      pip install -r requirements.txt
-      powershell .\make_installer.ps1
-    }
+  - if [%static%]==[1] (cargo build --release)
+  - if [%static%]==[1] (cd .\packaging\windows_wix)
+  - if [%static%]==[1] (pip install -r requirements.txt)
+  - if [%static%]==[1] (powershell .\make_installer.ps1)
 
 before_test:
   - >
