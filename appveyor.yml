@@ -37,8 +37,8 @@ install:
   - cargo -vV
 
 build_script:
-  - |
-    if [%static%]==[1] (
+  ps: >-
+    if ($env:static = "1") (
       cargo build --release
       cd .\packaging\windows_wix
       pip install -r requirements.txt
