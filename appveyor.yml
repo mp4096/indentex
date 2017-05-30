@@ -35,6 +35,7 @@ install:
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
+  - echo %WIX%
 
 build_script:
   - if [%static%]==[1] (cargo build --release)
