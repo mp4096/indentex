@@ -36,6 +36,7 @@ install:
   - rustc -vV
   - cargo -vV
   - echo %WIX%
+  - if [%static%]==[1] (set "RUSTFLAGS=-C target-feature=+crt-static")
 
 build_script:
   - if [%static%]==[1] (cargo build --release)
@@ -50,7 +51,6 @@ before_test:
     -FileName ./tests/blns/blns.inden.tex
 
 test_script:
-  - if [%static%]==[1] (set "RUSTFLAGS=-C target-feature=+crt-static")
   - cargo build
   - cargo test
   - cargo run -- -v ./tests/
@@ -58,7 +58,7 @@ test_script:
   - python ./tests/compare_to_reference.py
 
 artifacts:
-  - path: packaging\windows_wix\indentex.msi
+  - path: packaging\windows_wix\indentex_*.msi
     name: indentex_installer
 
 deploy:

@@ -1,12 +1,5 @@
-from os import path
+from package_info import get_version
 from string import Template
-import toml
-
-
-def get_version():
-    with open(path.join("..", "..", "Cargo.toml")) as f:
-        cargo = toml.load(f)
-        return cargo["package"]["version"]
 
 
 def configure_wxs_file(**context):
