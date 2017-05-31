@@ -29,7 +29,7 @@ clap = "^2.24.2"
 globset = "^0.2.0"
 ignore = "^0.2.0"
 nom = "^3.0.0"
-rayon = "^0.7.0"
+rayon = "^0.7.1"
 
 
 [profile.release]
