@@ -32,7 +32,6 @@ install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
   - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (choco install pandoc)
-  - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (pip install -r .\packaging\windows_wix\requirements.txt)
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
