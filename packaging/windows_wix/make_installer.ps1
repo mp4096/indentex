@@ -9,9 +9,7 @@ $PackageVersion = $(python package_info.py)
 
 pandoc -f markdown -t rtf ..\..\LICENSE.md -s -o LICENSE.rtf
 
-& "$env:WIX\bin\candle" indentex.wxs
-& "$env:WIX\bin\light" indentex.wixobj -ext WixUIExtension -sice:ICE91
-
 $TargetFile = "indentex_${PackageVersion}_amd64.msi"
-Remove-Item $TargetFile -ErrorAction Ignore
-Rename-Item indentex.msi $TargetFile
+
+& "$env:WIX\bin\candle" indentex.wxs
+& "$env:WIX\bin\light" indentex.wixobj -ext WixUIExtension -sice:ICE91 -o $TargetFile
