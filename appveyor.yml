@@ -64,7 +64,8 @@ artifacts:
 deploy:
   - provider: GitHub
     artifact: indentex_installer
-    auth_token: 9QypfhMr/2TVe8WSZNepJafno+SmV+DmNv+GczEgQ8geVN2Wz0pvUZDkzp4PdcsV
+    auth_token:
+      secure: 9QypfhMr/2TVe8WSZNepJafno+SmV+DmNv+GczEgQ8geVN2Wz0pvUZDkzp4PdcsV
     on:
       appveyor_repo_tag: true
       appveyor_repo_name: mp4096/indentex
