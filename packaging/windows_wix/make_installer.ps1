@@ -1,7 +1,8 @@
-cargo build --release --target=x86_64-pc-windows-msvc
+$VersionOutput = $(cargo run --release --target=x86_64-pc-windows-msvc -- -V)
 Copy-Item ..\..\target\x86_64-pc-windows-msvc\release\indentex.exe .
 
-$PackageVersion = $(python package_info.py)
+$VersionOutput -match "indentex (\S+)"
+$PackageVersion = $Matches[1]
 
 (Get-Content .\indentex_template.wxs) `
     -replace '{{{version}}}', "$PackageVersion" `
