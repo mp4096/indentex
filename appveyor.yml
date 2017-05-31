@@ -58,7 +58,7 @@ test_script:
   - python ./tests/compare_to_reference.py
 
 artifacts:
-  - path: 'packaging\windows_wix\indentex_*.msi'
+  - path: 'packaging\windows_wix\*.msi'
     name: indentex_installer
 
 deploy:
