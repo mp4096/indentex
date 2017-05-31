@@ -6,3 +6,10 @@
 
 *_indentex.tex
 /tests/blns/blns.inden.tex
+
+/packaging/windows_wix/*.msi
+/packaging/windows_wix/*.wixobj
+/packaging/windows_wix/*.wixpdb
+/packaging/windows_wix/indentex.wxs
+/packaging/windows_wix/LICENSE.rtf
+/packaging/windows_wix/indentex.exe

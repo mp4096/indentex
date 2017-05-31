@@ -1,5 +1,16 @@
-python configure.py
+$VersionOutput = $(cargo run --release --target=x86_64-pc-windows-msvc -- -V)
+Copy-Item ..\..\target\x86_64-pc-windows-msvc\release\indentex.exe .
+
+$VersionOutput -match "indentex (\S+)"
+$PackageVersion = $Matches[1]
+
+(Get-Content .\indentex_template.wxs) `
+    -replace '{{{version}}}', "$PackageVersion" `
+    | Set-Content .\indentex.wxs
+
 pandoc -f markdown -t rtf ..\..\LICENSE.md -s -o LICENSE.rtf
 
-candle indentex.wxs
-light indentex.wixobj -ext WixUIExtension -sice:ICE91
+$TargetFile = "indentex_${PackageVersion}_amd64.msi"
+
+& "$env:WIX\bin\candle" indentex.wxs
+& "$env:WIX\bin\light" indentex.wixobj -ext WixUIExtension -sice:ICE91 -o $TargetFile

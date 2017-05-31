@@ -1,4 +1,5 @@
 os: Visual Studio 2015
+platform: x64
 cache:
   - '%USERPROFILE%\.cargo'
 
@@ -30,9 +31,12 @@ matrix:
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
+  - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (choco install pandoc)
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
+  - echo %WIX%
+  - if [%static%]==[1] (set "RUSTFLAGS=-C target-feature=+crt-static")
 
 build: false
 
@@ -43,9 +47,29 @@ before_test:
     -FileName ./tests/blns/blns.inden.tex
 
 test_script:
-  - if [%static%]==[1] (set "RUSTFLAGS=-C target-feature=+crt-static")
   - cargo build
   - cargo test
   - cargo run -- -v ./tests/
   - cargo run -- -v ./tests/empty_folder/  # Check how indentex handles empty folders
   - python ./tests/compare_to_reference.py
+
+after_test:
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd .\packaging\windows_wix)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (powershell .\make_installer.ps1)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd ..\..)
+
+artifacts:
+  - path: 'packaging\windows_wix\*.msi'
+    name: indentex_installer
+
+deploy:
+  - provider: GitHub
+    artifact: indentex_installer
+    auth_token:
+      secure: OJRWfhZpmmunYEznHNrUiBvkcd80Gh6pafJboHC4ba20mVKL0JD5KLqM70sDf0xh
+    on:
+      appveyor_repo_tag: true
+      appveyor_repo_name: mp4096/indentex
+      channel: nightly
+      target: x86_64-pc-windows-msvc
+      static: 1
