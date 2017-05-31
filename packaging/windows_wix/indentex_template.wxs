@@ -32,7 +32,7 @@
             <Directory Id="LocalAppDataFolder">
                 <Directory Id="INSTALLDIR" Name="Indentex">
                     <Component Id="MainExecutable" Guid="$$(var.MainExecutableGuid)">
-                        <File Id="IndentexEXE" Source="..\..\target\release\indentex.exe" Vital="yes" />
+                        <File Id="IndentexEXE" Source=".\indentex.exe" Vital="yes" />
                         <RemoveFolder Id="INSTALLDIR" On="uninstall" />
                         <RegistryKey Root="HKCU" Key="Software\Indentex">
                             <RegistryValue Name="Version" Value="[ProductVersion]" KeyPath="yes" Type="string" />

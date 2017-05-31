@@ -6,7 +6,9 @@ ARCH = "amd64"
 
 
 def rename_installer():
-    os.rename("indentex.msi", "indentex_{}_{}.msi".format(get_version(), ARCH))
+    target_file = "indentex_{}_{}.msi".format(get_version(), ARCH)
+    os.remove(target_file)
+    os.rename("indentex.msi", target_file)
 
 
 if __name__ == "__main__":
