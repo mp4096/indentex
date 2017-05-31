@@ -31,18 +31,15 @@ matrix:
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
-  - if [%static%]==[1] (choco install pandoc)
-  - if [%static%]==[1] (pip install -r .\packaging\windows_wix\requirements.txt)
+  - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (choco install pandoc)
+  - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (pip install -r .\packaging\windows_wix\requirements.txt)
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
   - echo %WIX%
   - if [%static%]==[1] (set "RUSTFLAGS=-C target-feature=+crt-static")
 
-build_script:
-  - if [%static%]==[1] (cd .\packaging\windows_wix)
-  - if [%static%]==[1] (powershell .\make_installer.ps1)
-  - if [%static%]==[1] (cd ..\..)
+build: false
 
 before_test:
   - >
@@ -56,6 +53,11 @@ test_script:
   - cargo run -- -v ./tests/
   - cargo run -- -v ./tests/empty_folder/  # Check how indentex handles empty folders
   - python ./tests/compare_to_reference.py
+
+after_test:
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd .\packaging\windows_wix)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (powershell .\make_installer.ps1)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd ..\..)
 
 artifacts:
   - path: 'packaging\windows_wix\*.msi'
