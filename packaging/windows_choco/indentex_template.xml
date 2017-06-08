@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <metadata>
+        <id>indentex</id>
+        <title>Indentex</title>
+        <version>{{{version}}}</version>
+        <authors>Mikhail Pak, Hans Kirchner</authors>
+        <owners>Myself</owners>
+        <summary>A transpiler for an indentation-based superset of LaTeX.</summary>
+        <description>Your descriptions here</description>
+        <projectUrl>https://github.com/mp4096/indentex</projectUrl>
+        <tags>latex transpiler rust</tags>
+        <licenseUrl>https://raw.githubusercontent.com/mp4096/indentex/master/LICENSE.md</licenseUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance> <!-- or true if you require the user to accept the License before installing -->
+        <iconUrl>http://www.myapp.tld/logo.png</iconUrl>
+    </metadata>
+</package>
