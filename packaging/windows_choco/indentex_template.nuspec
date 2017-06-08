@@ -5,13 +5,10 @@
         <title>Indentex</title>
         <version>{{{version}}}</version>
         <authors>Mikhail Pak, Hans Kirchner</authors>
-        <owners>Myself</owners>
-        <summary>A transpiler for an indentation-based superset of LaTeX.</summary>
-        <description>Your descriptions here</description>
+        <description>A transpiler for an indentation-based superset of LaTeX.</description>
         <projectUrl>https://github.com/mp4096/indentex</projectUrl>
         <tags>latex transpiler rust</tags>
         <licenseUrl>https://raw.githubusercontent.com/mp4096/indentex/master/LICENSE.md</licenseUrl>
-        <requireLicenseAcceptance>false</requireLicenseAcceptance> <!-- or true if you require the user to accept the License before installing -->
-        <iconUrl>http://www.myapp.tld/logo.png</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
     </metadata>
 </package>
