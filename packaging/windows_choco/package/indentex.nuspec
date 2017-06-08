@@ -3,7 +3,7 @@
     <metadata>
         <id>indentex</id>
         <title>Indentex</title>
-        <version>{{{version}}}</version>
+        <version>$version$</version>
         <authors>Mikhail Pak, Hans Kirchner</authors>
         <description>A transpiler for an indentation-based superset of LaTeX.</description>
         <projectUrl>https://github.com/mp4096/indentex</projectUrl>
