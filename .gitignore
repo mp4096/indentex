@@ -13,3 +13,6 @@
 /packaging/windows_wix/indentex.wxs
 /packaging/windows_wix/LICENSE.rtf
 /packaging/windows_wix/indentex.exe
+
+/packaging/windows_choco/package
+/packaging/windows_choco/*.nupkg
