@@ -36,3 +36,7 @@ rayon = "^0.7.1"
 opt-level = 3
 lto = true
 debug-assertions = false
+
+[lib]
+name = "indentex"
+crate-type = ["dylib"]
