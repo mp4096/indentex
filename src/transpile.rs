@@ -46,7 +46,7 @@ fn scan_indents<T: AsRef<str>>(lines: &[T]) -> Vec<usize> {
 
 
 // Transpilation
-fn transpile<T: AsRef<str>>(lines: &[T], options: &TranspileOptions) -> String {
+pub fn transpile<T: AsRef<str>>(lines: &[T], options: &TranspileOptions) -> String {
     use parsers::Environment;
     use parsers::Hashline::{PlainLine, OpenEnv};
     use parsers::process_line;

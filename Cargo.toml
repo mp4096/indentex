@@ -28,6 +28,7 @@ assets = [
 clap = "^2.24.2"
 globset = "^0.2.0"
 ignore = "^0.2.0"
+libc = "^0.2.23"
 nom = "^3.0.0"
 rayon = "^0.7.1"
 
