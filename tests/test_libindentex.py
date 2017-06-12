@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from cffi import FFI
+from os import path
+import sys
 
 INPUT = b"""# equation*:
   # label: eq:test
@@ -11,7 +13,11 @@ def main():
     int indentex_transpile_flags(const void *input, size_t input_len,
         void *output, size_t output_len, int flags);
     """)
-    indentex = ffi.dlopen("target/debug/libindentex.so")
+
+    if sys.platform == "win32":
+        indentex = ffi.dlopen(path.join("target", "debug", "indentex.dll"))
+    else:
+        indentex = ffi.dlopen(path.join("target", "debug", "libindentex.so"))
 
     buf_len = 1000
     buf = ffi.new('char[]', buf_len)
