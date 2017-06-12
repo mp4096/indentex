@@ -59,18 +59,20 @@ pub fn rename_indentex_file<T: AsRef<Path>>(old_path: T) -> Result<PathBuf, Inde
 }
 
 /// Read a file line by line, right-trim lines and _copy_ them into a vec of strings
-pub fn read_and_trim_lines<T: AsRef<Path>>(path: T) -> Result<Vec<String>, IndentexError> {
+pub fn read<T: AsRef<Path>>(path: T) -> Result<String, IndentexError> {
     use std::fs::File;
-    use std::io::{BufReader, BufRead};
+    use std::io::{BufReader, Read};
 
     if !is_indentex_file(path.as_ref()) {
         return Err(IndentexError::InvalidExtension);
     }
 
     let file = File::open(path.as_ref())?;
-    let buf = BufReader::new(file);
+    let mut buf = BufReader::new(file);
 
-    buf.lines().map(|r| Ok(r?.trim_right().to_string())).collect()
+    let mut content = String::new();
+    buf.read_to_string(&mut content)?;
+    Ok(content)
 }
 
 pub fn write_to_file<T, U>(path: T, data: U) -> Result<(), IndentexError>
