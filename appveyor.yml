@@ -73,3 +73,15 @@ deploy:
       channel: nightly
       target: x86_64-pc-windows-msvc
       static: 1
+  - provider: NuGet
+    artifact: /.*\.nupkg/
+    server: https://chocolatey.org
+    api_key:
+      secure: c0ycGcvfqd0GuAuKdRVHczXioz8NC4aVarjZLYyVNtdkK4/5YIpGfriJnZjQY7l7
+    skip_symbols: true
+    on:
+      appveyor_repo_tag: true
+      appveyor_repo_name: mp4096/indentex
+      channel: nightly
+      target: x86_64-pc-windows-msvc
+      static: 1
