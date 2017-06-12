@@ -61,6 +61,8 @@ after_test:
 artifacts:
   - path: 'packaging\windows_wix\*.msi'
     name: indentex_installer
+  - path: 'packaging\windows_choco\*.nupkg'
+    name: indentex_choco_package
 
 deploy:
   - provider: GitHub
@@ -74,7 +76,7 @@ deploy:
       target: x86_64-pc-windows-msvc
       static: 1
   - provider: NuGet
-    artifact: /.*\.nupkg/
+    artifact: indentex_choco_package
     server: https://chocolatey.org
     api_key:
       secure: c0ycGcvfqd0GuAuKdRVHczXioz8NC4aVarjZLYyVNtdkK4/5YIpGfriJnZjQY7l7
