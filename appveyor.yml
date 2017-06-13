@@ -56,6 +56,8 @@ test_script:
 after_test:
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd .\packaging\windows_wix)
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (powershell .\make_installer.ps1)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd ..\..\packaging\windows_choco)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (powershell .\make.ps1)
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd ..\..)
 
 artifacts:
