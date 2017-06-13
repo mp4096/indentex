@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+    <metadata>
+        <id>indentex</id>
+        <title>Indentex</title>
+        <version>$version$</version>
+        <authors>Mikhail Pak, Hans Kirchner</authors>
+        <description>A transpiler for an indentation-based superset of LaTeX.</description>
+        <projectUrl>https://github.com/mp4096/indentex</projectUrl>
+        <tags>latex transpiler rust</tags>
+        <licenseUrl>https://raw.githubusercontent.com/mp4096/indentex/master/LICENSE.md</licenseUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    </metadata>
+</package>

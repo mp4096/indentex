@@ -56,17 +56,33 @@ test_script:
 after_test:
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd .\packaging\windows_wix)
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (powershell .\make_installer.ps1)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd ..\..\packaging\windows_choco)
+    - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (powershell .\make.ps1)
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd ..\..)
 
 artifacts:
   - path: 'packaging\windows_wix\*.msi'
     name: indentex_installer
+  - path: 'packaging\windows_choco\*.nupkg'
+    name: indentex_choco_package
 
 deploy:
   - provider: GitHub
     artifact: indentex_installer
     auth_token:
       secure: OJRWfhZpmmunYEznHNrUiBvkcd80Gh6pafJboHC4ba20mVKL0JD5KLqM70sDf0xh
+    on:
+      appveyor_repo_tag: true
+      appveyor_repo_name: mp4096/indentex
+      channel: nightly
+      target: x86_64-pc-windows-msvc
+      static: 1
+  - provider: NuGet
+    artifact: indentex_choco_package
+    server: https://chocolatey.org
+    api_key:
+      secure: c0ycGcvfqd0GuAuKdRVHczXioz8NC4aVarjZLYyVNtdkK4/5YIpGfriJnZjQY7l7
+    skip_symbols: true
     on:
       appveyor_repo_tag: true
       appveyor_repo_name: mp4096/indentex
