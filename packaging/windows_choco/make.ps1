@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 $VersionOutput = $(cargo run --release --target=x86_64-pc-windows-msvc -- -V)
 Copy-Item ..\..\target\x86_64-pc-windows-msvc\release\indentex.exe .\package
 
