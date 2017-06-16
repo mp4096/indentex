@@ -69,7 +69,14 @@ fn main() {
             .value_name("FILE"))
         .get_matches();
 
-    let path = Path::new(m.value_of("path").unwrap_or(""));
+    let use_single_file_mode = match m.value_of("path") {
+        Some(p) => Path::new(p).is_file(),
+        None => true,
+    };
+    let use_directory_mode = match m.value_of("path") {
+        Some(p) => Path::new(p).is_dir(),
+        None => false,
+    };
     let verbose = m.is_present("verbose");
     let stdout = m.is_present("stdout");
     let options = TranspileOptions {
@@ -78,7 +85,7 @@ fn main() {
     };
 
     let ret_val =
-    if ! m.is_present("path") ||  path.is_file() {
+    if use_single_file_mode {
         // Single file mode
         match single_file_mode(m.value_of("path"), m.value_of("out"), stdout, &options) {
             Ok(_) => ReturnCode::Ok,
@@ -87,14 +94,14 @@ fn main() {
                 ReturnCode::GenericError
             },
         }
-    } else if path.is_dir() {
+    } else if use_directory_mode {
         // Directory mode
         match directory_mode(m.value_of("path").unwrap(), &options, verbose) {
             Ok(_) => ReturnCode::Ok,
             Err(_) => ReturnCode::GenericError,
         }
     } else {
-        println_stderr!("Error: path '{}' is neither a file nor a directory", path.display());
+        println_stderr!("Error: path '{}' is neither a file nor a directory", m.value_of("path").unwrap());
         ReturnCode::FileTypeError
     };
 
