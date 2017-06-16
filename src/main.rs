@@ -16,7 +16,15 @@ mod parsers;
 mod transpile;
 
 use error::IndentexError;
+use std::io::Write;
 use transpile::TranspileOptions;
+
+macro_rules! println_stderr(
+    ($($arg:tt)*) => { {
+        let r = writeln!(&mut ::std::io::stderr(), $($arg)*);
+        r.expect("failed printing to stderr");
+    } }
+);
 
 enum ReturnCode {
     Ok = 0,
@@ -74,7 +82,10 @@ fn main() {
         // Single file mode
         match single_file_mode(m.value_of("path"), m.value_of("out"), stdout, &options) {
             Ok(_) => ReturnCode::Ok,
-            Err(_) => ReturnCode::GenericError,
+            Err(e) => {
+                println_stderr!("Could not transpile: {}", e);
+                ReturnCode::GenericError
+            },
         }
     } else if path.is_dir() {
         // Directory mode
@@ -83,7 +94,7 @@ fn main() {
             Err(_) => ReturnCode::GenericError,
         }
     } else {
-        println!("Error: path '{}' is neither a file nor a directory", path.display());
+        println_stderr!("Error: path '{}' is neither a file nor a directory", path.display());
         ReturnCode::FileTypeError
     };
 
@@ -129,7 +140,7 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
                         write_to_file(path_out, &transpiled_text)?;
                     }
                     None => {
-                        println!("You need to specify either --stdout or --out OUTFILE");
+                        println_stderr!("You need to specify either --stdout or --out OUTFILE");
                         // TODO return error
                     }
                 }
@@ -154,15 +165,15 @@ fn directory_mode(path: &str, options: &TranspileOptions, verbose: bool)
         .map(|p| match transpile_file(&p, &options) {
             Ok(_) => {
                 if verbose {
-                    println!("Transpiling file '{}'... ok", p.display());
+                    println_stderr!("Transpiling file '{}'... ok", p.display());
                 }
                 true
             }
             Err(e) => {
                 if verbose {
-                    println!("Transpiling file '{}'... failed", p.display());
+                    println_stderr!("Transpiling file '{}'... failed", p.display());
                 }
-                println!("Could not transpile '{}': {}", p.display(), e);
+                println_stderr!("Could not transpile '{}': {}", p.display(), e);
                 false
             }
         })
