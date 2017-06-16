@@ -1,10 +1,19 @@
-# `indentex`: An indentation-based superset of LaTeX
+<div align="center">
+  <img width="25%", src="doc/images/logo.png"><br><br>
+</div>
 
 
 [![Travis Build Status](https://travis-ci.org/mp4096/indentex.svg?branch=master)](https://travis-ci.org/mp4096/indentex)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/uyu5ku0e80fo6t88/branch/master?svg=true)](https://ci.appveyor.com/project/mp4096/indentex/branch/master)
 [![Dependency Status](https://www.versioneye.com/user/projects/590b1f9dda0c25003951c568/badge.svg)](https://www.versioneye.com/user/projects/590b1f9dda0c25003951c568)
 [![Coverage Status](https://coveralls.io/repos/github/mp4096/indentex/badge.svg?branch=master)](https://coveralls.io/github/mp4096/indentex?branch=master)
+
+
+Indentex is an indentation-based superset of LaTeX.
+An Indentex source file is more concise and visually less cluttered than an equivalent
+LaTeX file. Its indentation-based syntax was inspired by Python.
+Transpiling an Indentex source file yields a plain LaTeX file,
+which can be used further in your toolchain, sent to a publisher or your colleagues.
 
 
 ## Installation
