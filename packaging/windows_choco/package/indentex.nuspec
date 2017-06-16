@@ -13,6 +13,7 @@
           Transpiling an Indentex source file yields a plain LaTeX file,
           which can be used further in your toolchain, sent to a publisher or your colleagues.
         </description>
+        <iconUrl>https://cdn.rawgit.com/mp4096/indentex/7b464e29/doc/images/icon.png</iconUrl>
         <projectUrl>https://github.com/mp4096/indentex</projectUrl>
         <bugTrackerUrl>https://github.com/mp4096/indentex/issues</bugTrackerUrl>
         <projectSourceUrl>https://github.com/mp4096/indentex</projectSourceUrl>
