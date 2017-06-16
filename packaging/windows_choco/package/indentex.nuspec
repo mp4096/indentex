@@ -17,6 +17,7 @@
         <bugTrackerUrl>https://github.com/mp4096/indentex/issues</bugTrackerUrl>
         <projectSourceUrl>https://github.com/mp4096/indentex</projectSourceUrl>
         <packageSourceUrl>https://github.com/mp4096/indentex/tree/master/packaging/windows_choco/package</packageSourceUrl>
+        <releaseNotes>https://github.com/mp4096/indentex/blob/master/CHANGELOG.md</releaseNotes>
         <tags>latex transpiler rust</tags>
         <licenseUrl>https://raw.githubusercontent.com/mp4096/indentex/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
