@@ -87,18 +87,34 @@ fn main() {
     let ret_val =
     if use_single_file_mode {
         // Single file mode
-        match single_file_mode(m.value_of("path"), m.value_of("out"), stdout, &options) {
-            Ok(_) => ReturnCode::Ok,
-            Err(e) => {
-                println_stderr!("Could not transpile: {}", e);
-                ReturnCode::GenericError
-            },
+        if !m.is_present("path") && !stdout && !m.is_present("out") {
+            println_stderr!("error: One of the arguments --stdout or --out/-o is required if no input file is given");
+            ReturnCode::GenericError
+        } else if stdout && m.is_present("out") {
+            println_stderr!("error: The arguments --stdout and --out/-o cannot be used together");
+            ReturnCode::GenericError
+        } else {
+            match single_file_mode(m.value_of("path"), m.value_of("out"), stdout, &options) {
+                Ok(_) => ReturnCode::Ok,
+                Err(e) => {
+                    println_stderr!("Could not transpile: {}", e);
+                    ReturnCode::GenericError
+                },
+            }
         }
     } else if use_directory_mode {
         // Directory mode
-        match directory_mode(m.value_of("path").unwrap(), &options, verbose) {
-            Ok(_) => ReturnCode::Ok,
-            Err(_) => ReturnCode::GenericError,
+        if m.is_present("out") {
+            println_stderr!("error: The argument --out/-o is not allowed for directories");
+            ReturnCode::GenericError
+        } else if m.is_present("stdout") {
+            println_stderr!("error: The argument --stdout is not allowed for directories");
+            ReturnCode::GenericError
+        } else {
+            match directory_mode(m.value_of("path").unwrap(), &options, verbose) {
+                Ok(_) => ReturnCode::Ok,
+                Err(_) => ReturnCode::GenericError,
+            }
         }
     } else {
         println_stderr!("Error: path '{}' is neither a file nor a directory", m.value_of("path").unwrap());
@@ -146,10 +162,7 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
                         let path_out = rename_indentex_file(p)?;
                         write_to_file(path_out, &transpiled_text)?;
                     }
-                    None => {
-                        println_stderr!("You need to specify either --stdout or --out OUTFILE");
-                        // TODO return error
-                    }
+                    None => { /* do nothing */ }
                 }
             }
         }
