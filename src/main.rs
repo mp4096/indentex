@@ -155,25 +155,22 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
 
     let transpiled_text = transpile(&buffer, options);
 
-    if stdout {
-        // Write to stdout
-        print!("{}", transpiled_text);
-    } else {
-        match out_path {
-            Some(p) => {
-                // Write to specified path
-                write_to_file(Path::new(p), &transpiled_text)?;
-            }
-            None => {
-                match in_path {
-                    Some(p) => {
-                        // Write to automatically determined path
-                        let path_out = rename_indentex_file(p)?;
-                        write_to_file(path_out, &transpiled_text)?;
-                    }
-                    None => { /* do nothing */ }
-                }
-            }
+    match(stdout, out_path, in_path) {
+        (true, _, _) => {
+            // Write to stdout
+            print!("{}", transpiled_text);
+        }
+        (false, Some(p), _) => {
+            // Write to specified path
+            write_to_file(Path::new(p), &transpiled_text)?;
+        }
+        (false, None, Some(p)) => {
+            // Write to automatically determined path
+            let path_out = rename_indentex_file(p)?;
+            write_to_file(path_out, &transpiled_text)?;
+        }
+        (false, None, None) => {
+            // This should never happen because it's an already handled edge case
         }
     }
 
