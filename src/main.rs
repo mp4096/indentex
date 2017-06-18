@@ -58,6 +58,9 @@ fn main() {
         .arg(Arg::with_name("disable-do-not-edit")
             .help("Disable prepending the 'DO NOT EDIT' notice")
             .long("disable-do-not-edit"))
+        .arg(Arg::with_name("stdin")
+            .help("Read latex text from standard in")
+            .long("stdin"))
         .arg(Arg::with_name("stdout")
             .help("Print transpiled text to standard out")
             .long("stdout"))
@@ -71,7 +74,7 @@ fn main() {
 
     let use_single_file_mode = match m.value_of("path") {
         Some(p) => Path::new(p).is_file(),
-        None => true,
+        None => m.is_present("stdin"),
     };
     let use_directory_mode = match m.value_of("path") {
         Some(p) => Path::new(p).is_dir(),
@@ -85,10 +88,16 @@ fn main() {
     };
 
     let ret_val =
-    if use_single_file_mode {
+    if !m.is_present("path") && !m.is_present("stdin") {
+        println_stderr!("error: Either an input path or --stdin is required");
+        ReturnCode::GenericError
+    } else if m.is_present("path") && m.is_present("stdin") {
+        println_stderr!("error: An input path and --stdin cannot be used together");
+        ReturnCode::GenericError
+    } else if use_single_file_mode {
         // Single file mode
-        if !m.is_present("path") && !stdout && !m.is_present("out") {
-            println_stderr!("error: One of the arguments --stdout or --out/-o is required if no input file is given");
+        if m.is_present("stdin") && !stdout && !m.is_present("out") {
+            println_stderr!("error: One of the arguments --stdout or --out/-o is required if reading from stdin");
             ReturnCode::GenericError
         } else if stdout && m.is_present("out") {
             println_stderr!("error: The arguments --stdout and --out/-o cannot be used together");
