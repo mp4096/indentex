@@ -160,16 +160,16 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
             // Write to stdout
             print!("{}", transpiled_text);
         }
-        (false, Some(p), _) => {
+        (_, Some(p), _) => {
             // Write to specified path
             write_to_file(Path::new(p), &transpiled_text)?;
         }
-        (false, None, Some(p)) => {
+        (_, _, Some(p)) => {
             // Write to automatically determined path
             let path_out = rename_indentex_file(p)?;
             write_to_file(path_out, &transpiled_text)?;
         }
-        (false, None, None) => {
+        (_, _, _) => {
             // This should never happen because it's an already handled edge case
         }
     }
