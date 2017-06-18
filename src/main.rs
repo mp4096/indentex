@@ -35,7 +35,7 @@ enum ReturnCode {
 }
 
 fn main() {
-    use clap::{App, Arg};
+    use clap::{App, Arg, ArgGroup};
     use std::path::Path;
     use std::process;
     use transpile::TranspileOptions;
@@ -60,7 +60,8 @@ fn main() {
             .long("disable-do-not-edit"))
         .arg(Arg::with_name("stdin")
             .help("Read latex text from standard in")
-            .long("stdin"))
+            .long("stdin")
+            .requires("output"))
         .arg(Arg::with_name("stdout")
             .help("Print transpiled text to standard out")
             .long("stdout"))
@@ -70,6 +71,11 @@ fn main() {
             .short("o")
             .takes_value(true)
             .value_name("FILE"))
+        .group(ArgGroup::with_name("output")
+            .args(&["out", "stdout"]))
+        .group(ArgGroup::with_name("input")
+            .args(&["path", "stdin"])
+            .required(true))
         .get_matches();
 
     let use_single_file_mode = match m.value_of("path") {
@@ -88,27 +94,13 @@ fn main() {
     };
 
     let ret_val =
-    if !m.is_present("path") && !m.is_present("stdin") {
-        println_stderr!("error: Either an input path or --stdin is required");
-        ReturnCode::GenericError
-    } else if m.is_present("path") && m.is_present("stdin") {
-        println_stderr!("error: An input path and --stdin cannot be used together");
-        ReturnCode::GenericError
-    } else if use_single_file_mode {
+    if use_single_file_mode {
         // Single file mode
-        if m.is_present("stdin") && !stdout && !m.is_present("out") {
-            println_stderr!("error: One of the arguments --stdout or --out/-o is required if reading from stdin");
-            ReturnCode::GenericError
-        } else if stdout && m.is_present("out") {
-            println_stderr!("error: The arguments --stdout and --out/-o cannot be used together");
-            ReturnCode::GenericError
-        } else {
-            match single_file_mode(m.value_of("path"), m.value_of("out"), stdout, &options) {
-                Ok(_) => ReturnCode::Ok,
-                Err(e) => {
-                    println_stderr!("Could not transpile: {}", e);
-                    ReturnCode::GenericError
-                },
+        match single_file_mode(m.value_of("path"), m.value_of("out"), stdout, &options) {
+            Ok(_) => ReturnCode::Ok,
+            Err(e) => {
+                println_stderr!("Could not transpile: {}", e);
+                ReturnCode::GenericError
             }
         }
     } else if use_directory_mode {
