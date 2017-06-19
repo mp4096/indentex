@@ -161,7 +161,7 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
             let path_out = rename_indentex_file(p)?;
             write_to_file(path_out, &transpiled_text)?;
         }
-        (_, _, _) => {
+        _ => {
             // This should never happen because it's an already handled edge case
         }
     }
