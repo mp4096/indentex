@@ -20,10 +20,9 @@ use std::io::Write;
 use transpile::TranspileOptions;
 
 macro_rules! println_stderr(
-    ($($arg:tt)*) => { {
-        let r = writeln!(&mut ::std::io::stderr(), $($arg)*);
-        r.expect("failed printing to stderr");
-    } }
+    ($($arg:tt)*) => {
+        writeln!(&mut ::std::io::stderr(), $($arg)*).unwrap();
+    }
 );
 
 enum ReturnCode {
