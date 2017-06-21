@@ -25,10 +25,10 @@ assets = [
 
 
 [dependencies]
-clap = "^2.24.2"
+clap = "^2.25.0"
 globset = "^0.2.0"
 ignore = "^0.2.0"
-nom = "^3.0.0"
+nom = "^3.1.0"
 rayon = "^0.8.1"
 
 
