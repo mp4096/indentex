@@ -57,13 +57,13 @@ fn main() {
         .arg(Arg::with_name("disable-do-not-edit")
             .help("Disable prepending the 'DO NOT EDIT' notice")
             .long("disable-do-not-edit"))
-        .arg(Arg::with_name("stdin")
+        .arg(Arg::with_name("from-stdin")
             .help("Read Indentex source from standard input")
-            .long("stdin")
+            .long("from-stdin")
             .requires("output"))
-        .arg(Arg::with_name("stdout")
+        .arg(Arg::with_name("to-stdout")
             .help("Write transpiled Indentex to standard output")
-            .long("stdout"))
+            .long("to-stdout"))
         .arg(Arg::with_name("out")
             .help("Write transpiled text to file")
             .long("out")
@@ -71,22 +71,22 @@ fn main() {
             .takes_value(true)
             .value_name("FILE"))
         .group(ArgGroup::with_name("output")
-            .args(&["out", "stdout"]))
+            .args(&["out", "to-stdout"]))
         .group(ArgGroup::with_name("input")
-            .args(&["path", "stdin"])
+            .args(&["path", "from-stdin"])
             .required(true))
         .get_matches();
 
     let use_single_file_mode = match m.value_of("path") {
         Some(p) => Path::new(p).is_file(),
-        None => m.is_present("stdin"),
+        None => m.is_present("from-stdin"),
     };
     let use_directory_mode = match m.value_of("path") {
         Some(p) => Path::new(p).is_dir(),
         None => false,
     };
     let verbose = m.is_present("verbose");
-    let stdout = m.is_present("stdout");
+    let stdout = m.is_present("to-stdout");
     let options = TranspileOptions {
         flatten_output: m.is_present("flatten-output"),
         prepend_do_not_edit_notice: ! m.is_present("disable-do-not-edit"),
@@ -107,8 +107,8 @@ fn main() {
         if m.is_present("out") {
             println_stderr!("error: The argument --out/-o is not allowed for directories");
             ReturnCode::GenericError
-        } else if m.is_present("stdout") {
-            println_stderr!("error: The argument --stdout is not allowed for directories");
+        } else if m.is_present("to-stdout") {
+            println_stderr!("error: The argument --to-stdout is not allowed for directories");
             ReturnCode::GenericError
         } else {
             match directory_mode(m.value_of("path").unwrap(), &options, verbose) {
