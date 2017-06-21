@@ -27,7 +27,7 @@ macro_rules! println_stderr(
 
 enum ReturnCode {
     Ok = 0,
-    GenericError = 1,
+    CommandLineError = 1,
     WalkError = 2,
     FileTypeError = 4,
     TranspilationError = 8,
@@ -38,6 +38,7 @@ fn main() {
     use std::path::Path;
     use std::process;
     use transpile::TranspileOptions;
+    use error::IndentexError;
 
     let m = App::new("indentex")
         .version(crate_version!())
@@ -99,21 +100,25 @@ fn main() {
             Ok(_) => ReturnCode::Ok,
             Err(e) => {
                 println_stderr!("Could not transpile: {}", e);
-                ReturnCode::GenericError
+                match e {
+                    IndentexError::InvalidExtension => ReturnCode::FileTypeError,
+                    _ => ReturnCode::TranspilationError,
+                }
             }
         }
     } else if use_directory_mode {
         // Directory mode
         if m.is_present("out") {
             println_stderr!("error: The argument --out/-o is not allowed for directories");
-            ReturnCode::GenericError
+            ReturnCode::CommandLineError
         } else if m.is_present("to-stdout") {
             println_stderr!("error: The argument --to-stdout is not allowed for directories");
-            ReturnCode::GenericError
+            ReturnCode::CommandLineError
         } else {
             match directory_mode(m.value_of("path").unwrap(), &options, verbose) {
                 Ok(_) => ReturnCode::Ok,
-                Err(_) => ReturnCode::GenericError,
+                Err(IndentexError::WalkError(_)) => ReturnCode::WalkError,
+                Err(_) => ReturnCode::TranspilationError,
             }
         }
     } else {
