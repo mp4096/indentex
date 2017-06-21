@@ -15,4 +15,5 @@
 /packaging/windows_wix/indentex.exe
 
 /packaging/windows_choco/package/indentex.exe
+/packaging/windows_choco/package/LICENSE.txt
 /packaging/windows_choco/*.nupkg

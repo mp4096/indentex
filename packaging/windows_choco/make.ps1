@@ -8,4 +8,6 @@ if (!($VersionOutput -match "indentex (\S+)")) {
 }
 $PackageVersion = $Matches[1]
 
+Copy-Item ..\..\LICENSE.md .\package\LICENSE.txt
+
 choco pack .\package\indentex.nuspec --version $PackageVersion
