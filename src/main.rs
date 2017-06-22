@@ -35,10 +35,10 @@ enum ReturnCode {
 
 fn main() {
     use clap::{App, Arg, ArgGroup};
+    use error::IndentexError;
     use std::path::Path;
     use std::process;
     use transpile::TranspileOptions;
-    use error::IndentexError;
 
     let m = App::new("indentex")
         .version(crate_version!())
@@ -111,7 +111,7 @@ fn main() {
         if m.is_present("out") {
             println_stderr!("error: The argument --out/-o is not allowed for directories");
             ReturnCode::CommandLineError
-        } else if m.is_present("to-stdout") {
+        } else if stdout {
             println_stderr!("error: The argument --to-stdout is not allowed for directories");
             ReturnCode::CommandLineError
         } else {
