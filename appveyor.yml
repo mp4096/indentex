@@ -65,6 +65,8 @@ artifacts:
     name: indentex_installer
   - path: 'packaging\windows_choco\*.nupkg'
     name: indentex_choco_package
+  - path: 'packaging\windows_choco\package\*.exe'
+    name: indentex_executable
 
 deploy:
   - provider: GitHub
