@@ -70,7 +70,7 @@ artifacts:
 
 deploy:
   - provider: GitHub
-    artifact: indentex_installer
+    artifact: indentex_installer, indentex_executable
     auth_token:
       secure: OJRWfhZpmmunYEznHNrUiBvkcd80Gh6pafJboHC4ba20mVKL0JD5KLqM70sDf0xh
     on:
