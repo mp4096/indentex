@@ -8,6 +8,8 @@
 [![Dependency Status](https://www.versioneye.com/user/projects/590b1f9dda0c25003951c568/badge.svg)](https://www.versioneye.com/user/projects/590b1f9dda0c25003951c568)
 [![Coverage Status](https://coveralls.io/repos/github/mp4096/indentex/badge.svg?branch=master)](https://coveralls.io/github/mp4096/indentex?branch=master)
 
+[![Chocolatey](https://img.shields.io/chocolatey/v/indentex.svg)](https://chocolatey.org/packages/indentex/)
+
 
 Indentex is an indentation-based superset of LaTeX.
 An Indentex source file is more concise and visually less cluttered than an equivalent
