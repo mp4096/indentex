@@ -6,13 +6,7 @@
         <version>$version$</version>
         <authors>Mikhail Pak, Hans Kirchner</authors>
         <summary>A transpiler for an indentation-based superset of LaTeX.</summary>
-        <description>
-          Indentex is an indentation-based superset of LaTeX.
-          An Indentex source file is more concise and visually less cluttered than an equivalent
-          LaTeX file. Its indentation-based syntax was inspired by Python.
-          Transpiling an Indentex source file yields a plain LaTeX file,
-          which can be used further in your toolchain, sent to a publisher or your colleagues.
-        </description>
+        <description>Indentex is an indentation-based superset of LaTeX. An Indentex source file is more concise and visually less cluttered than an equivalent LaTeX file. Its indentation-based syntax was inspired by Python. Transpiling an Indentex source file yields a plain LaTeX file, which can be used further in your toolchain, sent to a publisher or your colleagues.</description>
         <iconUrl>https://cdn.rawgit.com/mp4096/indentex/7b464e29/doc/images/icon.png</iconUrl>
         <projectUrl>https://github.com/mp4096/indentex</projectUrl>
         <bugTrackerUrl>https://github.com/mp4096/indentex/issues</bugTrackerUrl>
