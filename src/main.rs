@@ -183,27 +183,21 @@ fn directory_mode(path: &str, options: &TranspileOptions, verbose: bool)
 
     let batch: Vec<PathBuf> = walk_indentex_files(path)?;
 
-    let successful: bool = batch.par_iter()
+    batch.par_iter()
         .map(|p| match transpile_file(&p, &options) {
             Ok(_) => {
                 if verbose {
                     println_stderr!("Transpiling file '{}'... ok", p.display());
                 }
-                true
+                Ok(())
             }
             Err(e) => {
                 if verbose {
                     println_stderr!("Transpiling file '{}'... failed", p.display());
                 }
                 println_stderr!("Could not transpile '{}': {}", p.display(), e);
-                false
+                Err(IndentexError::TranspileError)
             }
         })
-        .all(|x| x);
-
-    if successful {
-        Ok(())
-    } else {
-        Err(IndentexError::TranspileError)
-    }
+        .reduce(|| Ok(()), |x, y| x.and(y))
 }
