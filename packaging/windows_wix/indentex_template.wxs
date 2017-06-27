@@ -54,6 +54,8 @@
         </Feature>
 
         <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
+        <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+        <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
 
         <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
         <UIRef Id="WixUI_InstallDir" />
