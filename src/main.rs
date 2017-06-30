@@ -137,17 +137,18 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
     use std::path::Path;
     use transpile::transpile;
 
-    let mut buffer = String::new();
-    match in_path {
+    let buffer = match in_path {
         Some(p) => {
             // Read from file
-            buffer = read(&p)?;
+            read(&p)?
         }
         None => {
             // Read from stdin
-            io::stdin().read_to_string(&mut buffer)?;
+            let mut temp = String::new();
+            io::stdin().read_to_string(&mut temp)?;
+            temp
         }
-    }
+    };
 
     let transpiled_text = transpile(&buffer, options);
 
@@ -178,12 +179,9 @@ fn directory_mode(path: &str, options: &TranspileOptions, verbose: bool)
 
     use file_utils::walk_indentex_files;
     use rayon::prelude::*;
-    use std::path::PathBuf;
     use transpile::transpile_file;
 
-    let batch: Vec<PathBuf> = walk_indentex_files(path)?;
-
-    batch.par_iter()
+    walk_indentex_files(path)?.par_iter()
         .map(|p| match transpile_file(&p, &options) {
             Ok(_) => {
                 if verbose {
