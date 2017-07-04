@@ -20,4 +20,4 @@ $TargetFile = "indentex_${PackageVersion}_amd64.msi"
 & "$env:WIX\bin\light" indentex.wixobj -ext WixUIExtension -sice:ICE91 -o $TargetFile
 
 $FileHash = (Get-FileHash $TargetFile -Algorithm SHA512).Hash.ToLower()
-Set-Content ".\$TargetFile.DIGEST" "$FileHash  $TargetFile"
+Set-Content -Path ".\$TargetFile.DIGEST" -Value "$FileHash  $TargetFile`n" -NoNewline
