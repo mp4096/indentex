@@ -61,7 +61,7 @@ after_test:
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd ..\..)
 
 artifacts:
-  - path: 'packaging\windows_wix\*.msi'
+  - path: 'packaging\windows_wix\*.msi*'
     name: indentex_installer
   - path: 'packaging\windows_choco\*.nupkg'
     name: indentex_choco_package
