@@ -9,7 +9,7 @@ if (!($VersionOutput -match "indentex (\S+)")) {
 $PackageVersion = $Matches[1]
 
 Copy-Item ..\..\LICENSE.md .\package\LICENSE.txt
-$Checksum = (Get-FileHash .\package\indentex.exe -Algorithm SHA256).Hash
+$Checksum = (Get-FileHash .\package\indentex.exe -Algorithm SHA512).Hash
 (((Get-Content .\VERIFICATION_TEMPLATE.txt) `
     -replace '{{{tag}}}', "$env:APPVEYOR_REPO_TAG_NAME") `
     -replace '{{{checksum}}}', "$Checksum") `
@@ -17,3 +17,5 @@ $Checksum = (Get-FileHash .\package\indentex.exe -Algorithm SHA256).Hash
     | Set-Content .\package\VERIFICATION.txt
 
 choco pack .\package\indentex.nuspec --version $PackageVersion
+
+Set-Content -Path "..\indentex.exe.DIGEST" -Value "$($Checksum.ToLower())  indentex.exe`n" -NoNewline
