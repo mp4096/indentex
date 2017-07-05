@@ -18,4 +18,4 @@ $Checksum = (Get-FileHash .\package\indentex.exe -Algorithm SHA512).Hash
 
 choco pack .\package\indentex.nuspec --version $PackageVersion
 
-Set-Content -Path ".\indentex.exe.DIGEST" -Value "$($Checksum.ToLower())  indentex.exe`n" -NoNewline
+Set-Content -Path "..\indentex.exe.DIGEST" -Value "$($Checksum.ToLower())  indentex.exe`n" -NoNewline
