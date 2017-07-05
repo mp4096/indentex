@@ -8,6 +8,7 @@
 /tests/blns/blns.inden.tex
 
 /packaging/windows_wix/*.msi
+/packaging/windows_wix/*.msi.DIGEST
 /packaging/windows_wix/*.wixobj
 /packaging/windows_wix/*.wixpdb
 /packaging/windows_wix/indentex.wxs
@@ -18,3 +19,4 @@
 /packaging/windows_choco/package/LICENSE.txt
 /packaging/windows_choco/package/VERIFICATION.txt
 /packaging/windows_choco/*.nupkg
+/packaging/windows_choco/indentex.exe.DIGEST
