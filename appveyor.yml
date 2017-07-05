@@ -67,10 +67,12 @@ artifacts:
     name: indentex_choco_package
   - path: 'packaging\windows_choco\package\*.exe'
     name: indentex_executable
+  - path: 'packaging\windows_choco\*.exe.DIGEST'
+    name: indentex_executable_digest
 
 deploy:
   - provider: GitHub
-    artifact: indentex_installer, indentex_executable
+    artifact: indentex_installer, indentex_executable, indentex_executable_digest
     auth_token:
       secure: OJRWfhZpmmunYEznHNrUiBvkcd80Gh6pafJboHC4ba20mVKL0JD5KLqM70sDf0xh
     on:
