@@ -133,7 +133,7 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
         options: &TranspileOptions) -> Result<(), IndentexError> {
 
     use file_utils::{read, rename_indentex_file, write_to_file};
-    use std::io::{self, Read};
+    use std::io::{stdin, Read};
     use std::path::Path;
     use transpile::transpile;
 
@@ -145,7 +145,7 @@ fn single_file_mode(in_path: Option<&str>, out_path: Option<&str>, stdout: bool,
         None => {
             // Read from stdin
             let mut temp = String::new();
-            io::stdin().read_to_string(&mut temp)?;
+            stdin().read_to_string(&mut temp)?;
             temp
         }
     };
