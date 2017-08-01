@@ -10,20 +10,6 @@ repository = "https://github.com/mp4096/indentex"
 publish = false
 
 
-[package.metadata.deb]
-maintainer = "Mikhail Pak <mikhail.pak@tum.de>"
-copyright = "2016-2017, Mikhail Pak <mikhail.pak@tum.de>, Hans Kirchner <h.kirchner@tum.de>"
-license_file = ["LICENSE.md", "6"]
-extended_description = "A transpiler for an indentation-based superset of LaTeX."
-depends = "$auto"
-section = "tex"
-priority = "optional"
-assets = [
-    ["target/release/indentex", "usr/bin/", "755"],
-    ["README.md", "usr/share/doc/indentex/README", "644"],
-    ]
-
-
 [dependencies]
 clap = "^2.26.0"
 globset = "^0.2.0"
@@ -36,3 +22,17 @@ rayon = "^0.8.2"
 opt-level = 3
 lto = true
 debug-assertions = false
+
+
+[package.metadata.deb]
+maintainer = "Mikhail Pak <mikhail.pak@tum.de>"
+copyright = "2016-2017, Mikhail Pak <mikhail.pak@tum.de>, Hans Kirchner <h.kirchner@tum.de>"
+license_file = ["LICENSE.md", "6"]
+extended_description = "A transpiler for an indentation-based superset of LaTeX."
+depends = "$auto"
+section = "tex"
+priority = "optional"
+assets = [
+    ["target/release/indentex", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/indentex/README", "644"],
+    ]
