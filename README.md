@@ -20,7 +20,7 @@ which can be used further in your toolchain, sent to a publisher or your colleag
 ## Installation
 
 ### From source
-Minimal Rust version: 1.13
+Please install the latest stable Rust version.
 
 ```sh
 cargo install --git https://github.com/mp4096/indentex/
