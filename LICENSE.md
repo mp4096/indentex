@@ -1,8 +1,8 @@
 MIT License
 
-Copyright (c) 2016-2017 Mikhail Pak
+Copyright (c) 2016-2018 Mikhail Pak
 
-Copyright (c) 2016-2017 Hans Kirchner
+Copyright (c) 2016-2018 Hans Kirchner
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
