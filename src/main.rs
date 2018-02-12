@@ -34,7 +34,7 @@ fn main() {
     let m = App::new("indentex")
         .version(crate_version!())
         .author(crate_authors!())
-        .about("Transpiler for an indentation-based superset of LaTeX")
+        .about(crate_description!())
         .arg(Arg::with_name("path")
             .help("Path to a single indentex file or a directory (recursively transpile all \
                    indentex files)")

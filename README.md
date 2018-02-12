@@ -31,7 +31,7 @@ Type `indentex -h` for help:
 
 ```
 indentex 0.4.0
-Mikhail Pak <mikhail.pak@tum.de>
+Mikhail Pak <mikhail.pak@tum.de>:Hans Kirchner <h.kirchner@tum.de>
 Transpiler for an indentation-based superset of LaTeX
 
 USAGE:
