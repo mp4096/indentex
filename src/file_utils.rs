@@ -1,14 +1,12 @@
+use error::IndentexError;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
-use error::IndentexError;
-
 
 const INDENTEX_GLOB: &'static str = "*.inden.tex";
 
-
 pub fn walk_indentex_files<T: AsRef<Path>>(rootdir: T) -> Result<Vec<PathBuf>, IndentexError> {
-    use ignore::WalkBuilder;
     use ignore::types::TypesBuilder;
+    use ignore::WalkBuilder;
 
     // Create a type matcher
     let mut tb = TypesBuilder::new();
@@ -36,7 +34,6 @@ fn is_indentex_file<T: AsRef<Path>>(filepath: T) -> bool {
     glob.is_match(filepath.as_ref())
 }
 
-
 /// Rename an `*.inden.tex` file into `*_inden.tex`
 pub fn rename_indentex_file<T: AsRef<Path>>(old_path: T) -> Result<PathBuf, IndentexError> {
     if !is_indentex_file(old_path.as_ref()) {
@@ -61,7 +58,7 @@ pub fn rename_indentex_file<T: AsRef<Path>>(old_path: T) -> Result<PathBuf, Inde
 /// Read a file line by line, right-trim lines and _copy_ them into a vec of strings
 pub fn read_and_trim_lines<T: AsRef<Path>>(path: T) -> Result<Vec<String>, IndentexError> {
     use std::fs::File;
-    use std::io::{BufReader, BufRead};
+    use std::io::{BufRead, BufReader};
 
     if !is_indentex_file(path.as_ref()) {
         return Err(IndentexError::InvalidExtension);
@@ -70,14 +67,16 @@ pub fn read_and_trim_lines<T: AsRef<Path>>(path: T) -> Result<Vec<String>, Inden
     let file = File::open(path.as_ref())?;
     let buf = BufReader::new(file);
 
-    buf.lines().map(|r| Ok(r?.trim_right().to_string())).collect()
+    buf.lines()
+        .map(|r| Ok(r?.trim_right().to_string()))
+        .collect()
 }
 
 pub fn write_to_file<T, U>(path: T, data: U) -> Result<(), IndentexError>
-    where T: AsRef<Path>,
-          U: AsRef<str>
+where
+    T: AsRef<Path>,
+    U: AsRef<str>,
 {
-
     use std::fs::File;
     use std::io::{BufWriter, Write};
 
@@ -87,7 +86,6 @@ pub fn write_to_file<T, U>(path: T, data: U) -> Result<(), IndentexError>
 
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -109,14 +107,22 @@ mod tests {
     fn rename_indentex_file() {
         use super::rename_indentex_file;
 
-        assert_eq!(rename_indentex_file(Path::new("./foo.inden.tex")).unwrap(),
-                   PathBuf::from("./foo_indentex.tex"));
-        assert_eq!(rename_indentex_file(Path::new("./foo.bar.inden.tex")).unwrap(),
-                   PathBuf::from("./foo.bar_indentex.tex"));
-        assert_eq!(rename_indentex_file(Path::new("./.foo.bar.inden.tex")).unwrap(),
-                   PathBuf::from("./.foo.bar_indentex.tex"));
-        assert_eq!(rename_indentex_file(Path::new("foo.inden.tex")).unwrap(),
-                   PathBuf::from("foo_indentex.tex"));
+        assert_eq!(
+            rename_indentex_file(Path::new("./foo.inden.tex")).unwrap(),
+            PathBuf::from("./foo_indentex.tex")
+        );
+        assert_eq!(
+            rename_indentex_file(Path::new("./foo.bar.inden.tex")).unwrap(),
+            PathBuf::from("./foo.bar_indentex.tex")
+        );
+        assert_eq!(
+            rename_indentex_file(Path::new("./.foo.bar.inden.tex")).unwrap(),
+            PathBuf::from("./.foo.bar_indentex.tex")
+        );
+        assert_eq!(
+            rename_indentex_file(Path::new("foo.inden.tex")).unwrap(),
+            PathBuf::from("foo_indentex.tex")
+        );
         assert!(rename_indentex_file(Path::new("foo.bar.tex")).is_err())
     }
 }

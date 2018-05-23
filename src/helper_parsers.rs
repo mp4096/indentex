@@ -45,12 +45,11 @@ macro_rules! none_of_bytes_as_bytes (
   );
 );
 
-
 #[cfg(test)]
 mod tests {
     use nom;
-    use nom::IResult::{Done, Error};
     use nom::ErrorKind;
+    use nom::IResult::{Done, Error};
 
     #[test]
     fn none_of_bytes_as_bytes() {

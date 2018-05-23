@@ -35,28 +35,38 @@ fn main() {
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
-        .arg(Arg::with_name("path")
-            .help("Path to a single indentex file or a directory (recursively transpile all \
-                   indentex files)")
-            .index(1)
-            .required(true))
-        .arg(Arg::with_name("verbose")
-            .help("Show transpilation progress")
-            .short("v")
-            .long("verbose"))
-        .arg(Arg::with_name("flatten-output")
-            .help("Remove all indentation from the output")
-            .long("flatten-output"))
-        .arg(Arg::with_name("disable-do-not-edit")
-            .help("Disable prepending the 'DO NOT EDIT' notice")
-            .long("disable-do-not-edit"))
+        .arg(
+            Arg::with_name("path")
+                .help(
+                    "Path to a single indentex file or a directory (recursively transpile all \
+                     indentex files)",
+                )
+                .index(1)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("verbose")
+                .help("Show transpilation progress")
+                .short("v")
+                .long("verbose"),
+        )
+        .arg(
+            Arg::with_name("flatten-output")
+                .help("Remove all indentation from the output")
+                .long("flatten-output"),
+        )
+        .arg(
+            Arg::with_name("disable-do-not-edit")
+                .help("Disable prepending the 'DO NOT EDIT' notice")
+                .long("disable-do-not-edit"),
+        )
         .get_matches();
 
     let path = Path::new(m.value_of("path").unwrap());
     let verbose = m.is_present("verbose");
     let options = TranspileOptions {
         flatten_output: m.is_present("flatten-output"),
-        prepend_do_not_edit_notice: ! m.is_present("disable-do-not-edit"),
+        prepend_do_not_edit_notice: !m.is_present("disable-do-not-edit"),
     };
 
     let mut ret_val = ReturnCode::Ok as i32;
@@ -74,11 +84,15 @@ fn main() {
         }
     } else {
         ret_val = ReturnCode::FileTypeError as i32;
-        println!("Error: path '{}' is neither a file nor a directory", path.display());
+        println!(
+            "Error: path '{}' is neither a file nor a directory",
+            path.display()
+        );
         Vec::new()
     };
 
-    let ret_val_transpilation = batch.par_iter()
+    let ret_val_transpilation = batch
+        .par_iter()
         .map(|p| match transpile_file(&p, &options) {
             Ok(_) => {
                 if verbose {
