@@ -2,7 +2,7 @@ use error::IndentexError;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
 
-const INDENTEX_GLOB: &'static str = "*.inden.tex";
+const INDENTEX_GLOB: &str = "*.inden.tex";
 
 pub fn walk_indentex_files<T: AsRef<Path>>(rootdir: T) -> Result<Vec<PathBuf>, IndentexError> {
     use ignore::types::TypesBuilder;

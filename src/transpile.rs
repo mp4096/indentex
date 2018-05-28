@@ -2,9 +2,9 @@ use error::IndentexError;
 use std::path::Path;
 use std::vec::Vec;
 
-const LINESEP: &'static str = "\n";
+const LINESEP: &str = "\n";
 const LATEX_TO_INDENTEX_FACTOR: f64 = 1.5;
-const DO_NOT_EDIT_NOTICE: &'static str =
+const DO_NOT_EDIT_NOTICE: &str =
     "\
      % ============================================================== %\n\
      %                                                                %\n\
