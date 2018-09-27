@@ -12,8 +12,8 @@ publish = false
 
 [dependencies]
 clap = "^2.32.0"
-globset = "^0.4.1"
-ignore = "^0.4.3"
+globset = "^0.4.2"
+ignore = "^0.4.4"
 nom = "^3.2.1"
 rayon = "^1.0.2"
 
