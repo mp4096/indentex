@@ -55,7 +55,7 @@ pub fn rename_indentex_file<T: AsRef<Path>>(old_path: T) -> Result<PathBuf, Inde
     Ok(new_pathbuf)
 }
 
-/// Read a file line by line, right-trim lines and _copy_ them into a vec of strings
+/// Read a file line by line, trim the ends of lines and _copy_ them into a vec of strings
 pub fn read_and_trim_lines<T: AsRef<Path>>(path: T) -> Result<Vec<String>, IndentexError> {
     use std::fs::File;
     use std::io::{BufRead, BufReader};
@@ -68,7 +68,7 @@ pub fn read_and_trim_lines<T: AsRef<Path>>(path: T) -> Result<Vec<String>, Inden
     let buf = BufReader::new(file);
 
     buf.lines()
-        .map(|r| Ok(r?.trim_right().to_string()))
+        .map(|r| Ok(r?.trim_end().to_string()))
         .collect()
 }
 
