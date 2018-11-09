@@ -8,6 +8,7 @@ readme = "README.md"
 keywords = ["latex"]
 repository = "https://github.com/mp4096/indentex"
 publish = false
+edition = "2018"
 
 
 [dependencies]
