@@ -1,4 +1,4 @@
-use error::IndentexError;
+use crate::error::IndentexError;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
 

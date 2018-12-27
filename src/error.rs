@@ -1,4 +1,4 @@
-use ignore;
+use ::ignore; // FIXME: Cannot use rustfmt on this one
 use std::fmt;
 use std::io;
 

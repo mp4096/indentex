@@ -1,4 +1,4 @@
-use error::IndentexError;
+use crate::error::IndentexError;
 use std::path::Path;
 use std::vec::Vec;
 
@@ -51,9 +51,9 @@ fn scan_indents<T: AsRef<str>>(lines: &[T]) -> Vec<usize> {
 
 // Transpilation
 fn transpile<T: AsRef<str>>(lines: &[T], options: &TranspileOptions) -> String {
-    use parsers::process_line;
-    use parsers::Environment;
-    use parsers::Hashline::{OpenEnv, PlainLine};
+    use crate::parsers::process_line;
+    use crate::parsers::Environment;
+    use crate::parsers::Hashline::{OpenEnv, PlainLine};
 
     // The number of environments is not known beforehand
     let mut env_stack: Vec<Environment> = Vec::new();
@@ -114,7 +114,7 @@ pub fn transpile_file<T: AsRef<Path>>(
     path: T,
     options: &TranspileOptions,
 ) -> Result<(), IndentexError> {
-    use file_utils::{read_and_trim_lines, rename_indentex_file, write_to_file};
+    use crate::file_utils::{read_and_trim_lines, rename_indentex_file, write_to_file};
 
     let lines = read_and_trim_lines(path.as_ref())?;
     let transpiled_text = transpile(&lines, options);

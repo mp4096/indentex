@@ -23,13 +23,13 @@ enum ReturnCode {
 }
 
 fn main() {
+    use crate::file_utils::walk_indentex_files;
+    use crate::transpile::{transpile_file, TranspileOptions};
     use clap::{App, Arg};
-    use file_utils::walk_indentex_files;
     use rayon::prelude::*;
     use std::cmp;
     use std::path::{Path, PathBuf};
     use std::process;
-    use transpile::{transpile_file, TranspileOptions};
 
     let m = App::new("indentex")
         .version(crate_version!())
