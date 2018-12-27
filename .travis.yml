@@ -66,6 +66,7 @@ after_success: >
     make install &&
     cd ../.. &&
     rm -rf kcov-35 &&
+    cargo clean &&
     RUSTFLAGS='-C link-dead-code' cargo test --no-run &&
     for file in target/debug/indentex-*; do
       if [[ "${file: -2}" != ".d" ]]; then
