@@ -71,7 +71,7 @@ named!(
     args_parser<u8>,
     alt!(escaped_percent | none_of_bytes_as_bytes!(b"%"))
 );
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 named!(
     hashline_parser<Hashline>,
     do_parse!(
@@ -133,7 +133,7 @@ fn process_hashline<T: AsRef<str>>(line: T) -> Option<Hashline> {
 }
 
 // Itemline parsers
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 named!(
     itemline_parser<Hashline>,
     do_parse!(
