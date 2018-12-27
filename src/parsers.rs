@@ -1,5 +1,3 @@
-use nom;
-
 #[derive(Debug, PartialEq)]
 pub enum Hashline {
     OpenEnv(Environment),

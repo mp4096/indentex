@@ -47,7 +47,6 @@ macro_rules! none_of_bytes_as_bytes (
 
 #[cfg(test)]
 mod tests {
-    use nom;
     use nom::ErrorKind;
     use nom::IResult::{Done, Error};
 

@@ -1,10 +1,5 @@
 #[macro_use]
-extern crate clap;
-extern crate globset;
-extern crate ignore;
-#[macro_use]
 extern crate nom;
-extern crate rayon;
 
 // Import helper macros before `parsers`
 #[macro_use]
@@ -25,7 +20,7 @@ enum ReturnCode {
 fn main() {
     use crate::file_utils::walk_indentex_files;
     use crate::transpile::{transpile_file, TranspileOptions};
-    use clap::{App, Arg};
+    use clap::{crate_authors, crate_description, crate_version, App, Arg};
     use rayon::prelude::*;
     use std::cmp;
     use std::path::{Path, PathBuf};
