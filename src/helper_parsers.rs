@@ -45,6 +45,7 @@ macro_rules! none_of_bytes_as_bytes (
   );
 );
 
+// __kcov_test_begin__
 #[cfg(test)]
 mod tests {
     use nom::ErrorKind;
@@ -72,3 +73,4 @@ mod tests {
         assert_eq!(f(b), Done(&b"de"[..], 'c' as u8));
     }
 }
+// __kcov_test_end__
