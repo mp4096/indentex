@@ -67,9 +67,7 @@ pub fn read_and_trim_lines<T: AsRef<Path>>(path: T) -> Result<Vec<String>, Inden
     let file = File::open(path.as_ref())?;
     let buf = BufReader::new(file);
 
-    buf.lines()
-        .map(|r| Ok(r?.trim_end().to_string()))
-        .collect()
+    buf.lines().map(|r| Ok(r?.trim_end().to_string())).collect()
 }
 
 pub fn write_to_file<T, U>(path: T, data: U) -> Result<(), IndentexError>
