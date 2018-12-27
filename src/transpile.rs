@@ -124,7 +124,7 @@ pub fn transpile_file<T: AsRef<Path>>(
     Ok(())
 }
 
-// __kcov_test_begin__
+// LCOV_EXCL_START
 #[cfg(test)]
 mod tests {
     #[test]
@@ -162,4 +162,4 @@ mod tests {
         assert_eq!(scan_indents(&d).capacity(), 9);
     }
 }
-// __kcov_test_end__
+// LCOV_EXCL_STOP

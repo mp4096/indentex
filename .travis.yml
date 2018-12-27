@@ -71,7 +71,7 @@ after_success: >
     for file in target/debug/indentex-*; do
       if [[ "${file: -2}" != ".d" ]]; then
         mkdir -p "target/cov/$(basename $file)";
-        kcov --exclude-pattern=/.cargo,/usr/lib --exclude-region='__kcov_test_begin__:__kcov_test_end__' --verify "target/cov/$(basename $file)" "$file";
+        kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
       fi;
     done &&
     kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*;

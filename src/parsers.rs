@@ -186,7 +186,7 @@ where
     }
 }
 
-// __kcov_test_begin__
+// LCOV_EXCL_START
 #[cfg(test)]
 mod tests {
     use nom::IResult::{Done, Error, Incomplete};
@@ -500,4 +500,4 @@ mod tests {
         );
     }
 }
-// __kcov_test_end__
+// LCOV_EXCL_STOP

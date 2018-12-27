@@ -85,7 +85,7 @@ where
     Ok(())
 }
 
-// __kcov_test_begin__
+// LCOV_EXCL_START
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -125,4 +125,4 @@ mod tests {
         assert!(rename_indentex_file(Path::new("foo.bar.tex")).is_err())
     }
 }
-// __kcov_test_end__
+// LCOV_EXCL_STOP
