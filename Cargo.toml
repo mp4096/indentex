@@ -12,9 +12,9 @@ edition = "2018"
 
 
 [dependencies]
-clap = "^2.32.0"
+clap = "^2.33.0"
 globset = "^0.4.2"
-ignore = "^0.4.5"
+ignore = "^0.4.7"
 nom = "^3.2.1"
 rayon = "^1.0.2"
 
