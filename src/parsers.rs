@@ -381,6 +381,11 @@ mod tests {
         use nom::Err::Error;
 
         assert_eq!(escaped_colon(r"\:"), Ok(("", ":")));
+        assert_eq!(escaped_colon(r"\"), Err(Error((r"", Tag))));
+        assert_eq!(escaped_colon(r":\"), Err(Error((r":\", Tag))));
+        assert_eq!(escaped_colon(r"\\"), Err(Error((r"\", Tag))));
+        assert_eq!(escaped_colon(r"\a"), Err(Error((r"a", Tag))));
+        assert_eq!(escaped_colon(r"\;"), Err(Error((r";", Tag))));
         assert_eq!(escaped_colon(""), Err(Error(("", Tag))));
         assert_eq!(escaped_colon("ab"), Err(Error(("ab", Tag))));
     }
