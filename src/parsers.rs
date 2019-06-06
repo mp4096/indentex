@@ -72,11 +72,35 @@ fn name_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
 }
 
 #[inline]
+fn name_parser(input: &str) -> nom::IResult<&str, String> {
+    nom::multi::fold_many1(
+        name_chunk_parser,
+        String::with_capacity(input.len()),
+        |mut acc: String, item| {
+            acc.push_str(item);
+            acc
+        },
+    )(input)
+}
+
+#[inline]
 fn opts_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     use nom::branch::alt;
     use nom::bytes::complete::{is_not, tag};
 
     alt((escaped_colon, tag("\\%"), tag("\\"), is_not("\\:%")))(input)
+}
+
+#[inline]
+fn opts_parser(input: &str) -> nom::IResult<&str, String> {
+    nom::multi::fold_many0(
+        opts_chunk_parser,
+        String::with_capacity(input.len()),
+        |mut acc: String, item| {
+            acc.push_str(item);
+            acc
+        },
+    )(input)
 }
 
 #[inline]
@@ -87,39 +111,29 @@ fn args_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     alt((tag("\\%"), tag("\\"), is_not("\\%")))(input)
 }
 
-fn hashline_parser(input: &str) -> nom::IResult<&str, Hashline> {
-    use nom::bytes::complete::{is_a, tag};
-    use nom::combinator::{opt, rest};
-    use nom::multi::{fold_many0, fold_many1};
-
-    let (input, res) = opt(is_a(" "))(input)?;
-    let ws = res.unwrap_or("");
-    let (input, _) = tag("# ")(input)?;
-    let (input, name) = fold_many1(
-        name_chunk_parser,
-        String::with_capacity(input.len()),
-        |mut acc: String, item| {
-            acc.push_str(item);
-            acc
-        },
-    )(input)?;
-    let (input, opts) = fold_many0(
-        opts_chunk_parser,
-        String::with_capacity(input.len()),
-        |mut acc: String, item| {
-            acc.push_str(item);
-            acc
-        },
-    )(input)?;
-    let (input, _) = tag(":")(input)?;
-    let (input, args) = fold_many0(
+#[inline]
+fn args_parser(input: &str) -> nom::IResult<&str, String> {
+    nom::multi::fold_many0(
         args_chunk_parser,
         String::with_capacity(input.len()),
         |mut acc: String, item| {
             acc.push_str(item);
             acc
         },
-    )(input)?;
+    )(input)
+}
+
+fn hashline_parser(input: &str) -> nom::IResult<&str, Hashline> {
+    use nom::bytes::complete::{is_a, tag};
+    use nom::combinator::{opt, rest};
+
+    let (input, res) = opt(is_a(" "))(input)?;
+    let ws = res.unwrap_or("");
+    let (input, _) = tag("# ")(input)?;
+    let (input, name) = name_parser(input)?;
+    let (input, opts) = opts_parser(input)?;
+    let (input, _) = tag(":")(input)?;
+    let (input, args) = args_parser(input)?;
     let (input, comment) = rest(input)?;
     Ok((input, hashline_helper(&ws, &name, &opts, &args, comment)))
 }
