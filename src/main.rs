@@ -1,10 +1,3 @@
-#[macro_use]
-extern crate nom;
-
-// Import helper macros before `parsers`
-#[macro_use]
-mod helper_parsers;
-
 mod error;
 mod file_utils;
 mod parsers;
