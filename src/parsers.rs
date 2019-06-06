@@ -22,7 +22,7 @@ impl Environment {
             comment = self.comment,
             dummy = "",
             ind = self.indent_depth,
-            comment_sep = if self.comment.is_empty() { "" } else { " " }
+            comment_sep = if self.comment.is_empty() { "" } else { " " },
         )
     }
 
@@ -31,7 +31,7 @@ impl Environment {
             r"{dummy:ind$}\end{{{name}}}",
             name = self.name,
             dummy = "",
-            ind = self.indent_depth
+            ind = self.indent_depth,
         )
     }
 
@@ -146,15 +146,14 @@ fn hashline_helper(ws: &str, name: &str, opts: &str, args: &str, comment: &str) 
         OpenEnv(env)
     } else {
         // If there are some args, it's a single-line command
-        let ws_trimmed = ws;
         PlainLine(format!(
             r"{indent}\{name}{opts}{{{args}}}{comment_sep}{comment}",
-            indent = ws_trimmed,
+            indent = ws,
             name = name_trimmed,
             opts = opts_trimmed,
             args = args_trimmed,
             comment_sep = if comment_trimmed.is_empty() { "" } else { " " },
-            comment = comment_trimmed
+            comment = comment_trimmed,
         ))
     }
 }
@@ -185,7 +184,7 @@ fn itemline_parser(input: &str) -> nom::IResult<&str, Hashline> {
             r"{indent}\item{item_sep}{content}",
             indent = indent.unwrap_or(""),
             content = item.trim(),
-            item_sep = if item.trim().is_empty() { "" } else { " " }
+            item_sep = if item.trim().is_empty() { "" } else { " " },
         )),
     ))
 }
