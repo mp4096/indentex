@@ -64,7 +64,7 @@ fn escaped_colon(input: &str) -> nom::IResult<&str, &str> {
 }
 
 #[inline]
-fn name_parser(input: &str) -> nom::IResult<&str, &str> {
+fn name_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     use nom::branch::alt;
     use nom::bytes::complete::{is_not, tag};
 
@@ -72,7 +72,7 @@ fn name_parser(input: &str) -> nom::IResult<&str, &str> {
 }
 
 #[inline]
-fn opts_parser(input: &str) -> nom::IResult<&str, &str> {
+fn opts_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     use nom::branch::alt;
     use nom::bytes::complete::{is_not, tag};
 
@@ -80,7 +80,7 @@ fn opts_parser(input: &str) -> nom::IResult<&str, &str> {
 }
 
 #[inline]
-fn args_parser(input: &str) -> nom::IResult<&str, &str> {
+fn args_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     use nom::branch::alt;
     use nom::bytes::complete::{is_not, tag};
 
@@ -96,7 +96,7 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, Hashline> {
     let ws = res.unwrap_or("");
     let (input, _) = tag("# ")(input)?;
     let (input, name) = fold_many1(
-        name_parser,
+        name_chunk_parser,
         String::with_capacity(input.len()),
         |mut acc: String, item| {
             acc.push_str(item);
@@ -104,7 +104,7 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, Hashline> {
         },
     )(input)?;
     let (input, opts) = fold_many0(
-        opts_parser,
+        opts_chunk_parser,
         String::with_capacity(input.len()),
         |mut acc: String, item| {
             acc.push_str(item);
@@ -113,7 +113,7 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, Hashline> {
     )(input)?;
     let (input, _) = tag(":")(input)?;
     let (input, args) = fold_many0(
-        args_parser,
+        args_chunk_parser,
         String::with_capacity(input.len()),
         |mut acc: String, item| {
             acc.push_str(item);
@@ -391,55 +391,55 @@ mod tests {
     }
 
     #[test]
-    fn name_parser() {
-        use super::name_parser;
+    fn name_chunk_parser() {
+        use super::name_chunk_parser;
         use nom::error::ErrorKind::IsNot;
         use nom::Err::Error;
 
-        assert_eq!(name_parser("abc"), Ok(("", "abc")));
-        assert_eq!(name_parser(r"abc\:"), Ok((r"\:", "abc")));
-        assert_eq!(name_parser(r"\:abc"), Ok(("abc", ":")));
-        assert_eq!(name_parser(" "), Err(Error((" ", IsNot))));
-        assert_eq!(name_parser(""), Err(Error(("", IsNot))));
+        assert_eq!(name_chunk_parser("abc"), Ok(("", "abc")));
+        assert_eq!(name_chunk_parser(r"abc\:"), Ok((r"\:", "abc")));
+        assert_eq!(name_chunk_parser(r"\:abc"), Ok(("abc", ":")));
+        assert_eq!(name_chunk_parser(" "), Err(Error((" ", IsNot))));
+        assert_eq!(name_chunk_parser(""), Err(Error(("", IsNot))));
 
         for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE"] {
-            assert_eq!(name_parser(e), Err(Error((e, IsNot))));
+            assert_eq!(name_chunk_parser(e), Err(Error((e, IsNot))));
         }
     }
 
     #[test]
-    fn opts_parser() {
-        use super::opts_parser;
+    fn opts_chunk_parser() {
+        use super::opts_chunk_parser;
         use nom::error::ErrorKind::IsNot;
         use nom::Err::Error;
 
-        assert_eq!(opts_parser(r"abc"), Ok(("", "abc")));
-        assert_eq!(opts_parser(r"\:abc"), Ok(("abc", ":")));
-        assert_eq!(opts_parser(r"\%abc"), Ok(("abc", r"\%")));
-        assert_eq!(opts_parser(r"(abc"), Ok(("", "(abc")));
-        assert_eq!(opts_parser(r"[abc"), Ok(("", "[abc")));
-        assert_eq!(opts_parser(r" abc"), Ok(("", " abc")));
-        assert_eq!(opts_parser(""), Err(Error(("", IsNot))));
+        assert_eq!(opts_chunk_parser(r"abc"), Ok(("", "abc")));
+        assert_eq!(opts_chunk_parser(r"\:abc"), Ok(("abc", ":")));
+        assert_eq!(opts_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
+        assert_eq!(opts_chunk_parser(r"(abc"), Ok(("", "(abc")));
+        assert_eq!(opts_chunk_parser(r"[abc"), Ok(("", "[abc")));
+        assert_eq!(opts_chunk_parser(r" abc"), Ok(("", " abc")));
+        assert_eq!(opts_chunk_parser(""), Err(Error(("", IsNot))));
 
         for e in vec![":E", "%E"] {
-            assert_eq!(opts_parser(e), Err(Error((e, IsNot))));
+            assert_eq!(opts_chunk_parser(e), Err(Error((e, IsNot))));
         }
     }
 
     #[test]
-    fn args_parser() {
-        use super::args_parser;
+    fn args_chunk_parser() {
+        use super::args_chunk_parser;
         use nom::error::ErrorKind::IsNot;
         use nom::Err::Error;
 
-        assert_eq!(args_parser(r"abc"), Ok(("", "abc")));
-        assert_eq!(args_parser(r"\:abc"), Ok((":abc", r"\")));
-        assert_eq!(args_parser(r"\%abc"), Ok(("abc", r"\%")));
-        assert_eq!(args_parser(r"(abc"), Ok(("", "(abc")));
-        assert_eq!(args_parser(r"[abc"), Ok(("", "[abc")));
-        assert_eq!(args_parser(r" abc"), Ok(("", " abc")));
-        assert_eq!(args_parser(""), Err(Error(("", IsNot))));
-        assert_eq!(args_parser("%E"), Err(Error(("%E", IsNot))));
+        assert_eq!(args_chunk_parser(r"abc"), Ok(("", "abc")));
+        assert_eq!(args_chunk_parser(r"\:abc"), Ok((":abc", r"\")));
+        assert_eq!(args_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
+        assert_eq!(args_chunk_parser(r"(abc"), Ok(("", "(abc")));
+        assert_eq!(args_chunk_parser(r"[abc"), Ok(("", "[abc")));
+        assert_eq!(args_chunk_parser(r" abc"), Ok(("", " abc")));
+        assert_eq!(args_chunk_parser(""), Err(Error(("", IsNot))));
+        assert_eq!(args_chunk_parser("%E"), Err(Error(("%E", IsNot))));
     }
 }
 // LCOV_EXCL_STOP
