@@ -66,9 +66,9 @@ fn escaped_colon(input: &str) -> nom::IResult<&str, &str> {
 #[inline]
 fn name_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     use nom::branch::alt;
-    use nom::bytes::complete::{is_not, tag};
+    use nom::bytes::complete::is_not;
 
-    alt((escaped_colon, tag("\\"), is_not("\\:%([{ \t")))(input)
+    alt((escaped_colon, is_not("\\:%([{ \t")))(input)
 }
 
 #[inline]
@@ -413,11 +413,52 @@ mod tests {
         assert_eq!(name_chunk_parser("abc"), Ok(("", "abc")));
         assert_eq!(name_chunk_parser(r"abc\:"), Ok((r"\:", "abc")));
         assert_eq!(name_chunk_parser(r"\:abc"), Ok(("abc", ":")));
+        assert_eq!(name_chunk_parser(r"\abc"), Err(Error((r"\abc", IsNot))));
         assert_eq!(name_chunk_parser(" "), Err(Error((" ", IsNot))));
         assert_eq!(name_chunk_parser(""), Err(Error(("", IsNot))));
 
-        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE"] {
+        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE", r"\E"] {
             assert_eq!(name_chunk_parser(e), Err(Error((e, IsNot))));
+        }
+    }
+
+    #[test]
+    fn name_parser() {
+        use super::name_parser;
+        use nom::error::ErrorKind::Many1;
+        use nom::Err::Error;
+
+        assert_eq!(name_parser("abc"), Ok(("", "abc".to_string())));
+        assert_eq!(name_parser(r"abc\:"), Ok(("", "abc:".to_string())));
+        assert_eq!(name_parser(r"\:abc"), Ok(("", ":abc".to_string())));
+        assert_eq!(name_parser("abc def"), Ok((" def", "abc".to_string())));
+        assert_eq!(name_parser(r"abc\:def"), Ok(("", "abc:def".to_string())));
+        assert_eq!(name_parser(r"abc\:\\"), Ok((r"\\", "abc:".to_string())));
+        assert_eq!(name_parser(r"\"), Err(Error((r"\", Many1))));
+        assert_eq!(name_parser(r"\\"), Err(Error((r"\\", Many1))));
+        assert_eq!(name_parser(r"\\\"), Err(Error((r"\\\", Many1))));
+        assert_eq!(name_parser(r"\\:\"), Err(Error((r"\\:\", Many1))));
+        assert_eq!(name_parser(" "), Err(Error((" ", Many1))));
+        assert_eq!(name_parser(""), Err(Error(("", Many1))));
+        assert_eq!(
+            name_parser("equation: foo"),
+            Ok((r": foo", "equation".to_string()))
+        );
+        assert_eq!(
+            name_parser("equation : foo"),
+            Ok((r" : foo", "equation".to_string()))
+        );
+        assert_eq!(
+            name_parser("equation [bar]: foo"),
+            Ok((r" [bar]: foo", "equation".to_string()))
+        );
+        assert_eq!(
+            name_parser("equation {bar}: foo"),
+            Ok((r" {bar}: foo", "equation".to_string()))
+        );
+
+        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE", r"\E"] {
+            assert_eq!(name_parser(e), Err(Error((e, Many1))));
         }
     }
 
