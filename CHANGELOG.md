@@ -1,5 +1,11 @@
 :warning: Before the 1.0 release, we only document minor releases here!
 
+# 0.5.0-alpha
+Commit 518d4854cbd353779495a0dfc3995a5941dec09e
+
+* Migrated to nom 5
+* Change parsing logic
+
 # 0.4.0 (2017-02-18)
 Commit 2adba137618d72c0251ddedfbbe01cc076536ce7
 
