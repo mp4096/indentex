@@ -230,6 +230,219 @@ where
 
 // LCOV_EXCL_START
 #[cfg(test)]
+mod helper_parser_tests {
+    #[test]
+    fn escaped_colon() {
+        use super::escaped_colon;
+        use nom::error::ErrorKind::Tag;
+        use nom::Err::Error;
+
+        assert_eq!(escaped_colon(r"\:"), Ok(("", ":")));
+        assert_eq!(escaped_colon(r"\"), Err(Error((r"", Tag))));
+        assert_eq!(escaped_colon(r":\"), Err(Error((r":\", Tag))));
+        assert_eq!(escaped_colon(r"\\"), Err(Error((r"\", Tag))));
+        assert_eq!(escaped_colon(r"\a"), Err(Error((r"a", Tag))));
+        assert_eq!(escaped_colon(r"\;"), Err(Error((r";", Tag))));
+        assert_eq!(escaped_colon(""), Err(Error(("", Tag))));
+        assert_eq!(escaped_colon("ab"), Err(Error(("ab", Tag))));
+    }
+}
+
+#[cfg(test)]
+mod name_parser_tests {
+    #[test]
+    fn name_chunk_parser() {
+        use super::name_chunk_parser;
+        use nom::error::ErrorKind::IsNot;
+        use nom::Err::Error;
+
+        assert_eq!(name_chunk_parser("abc"), Ok(("", "abc")));
+        assert_eq!(name_chunk_parser(r"abc\:"), Ok((r"\:", "abc")));
+        assert_eq!(name_chunk_parser(r"\:abc"), Ok(("abc", ":")));
+        assert_eq!(name_chunk_parser(r"\abc"), Err(Error((r"\abc", IsNot))));
+        assert_eq!(name_chunk_parser(" "), Err(Error((" ", IsNot))));
+        assert_eq!(name_chunk_parser(""), Err(Error(("", IsNot))));
+
+        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE", r"\E"] {
+            assert_eq!(name_chunk_parser(e), Err(Error((e, IsNot))));
+        }
+    }
+
+    #[test]
+    fn name_parser() {
+        use super::name_parser;
+        use nom::error::ErrorKind::Many1;
+        use nom::Err::Error;
+
+        assert_eq!(name_parser("abc"), Ok(("", "abc".to_string())));
+        assert_eq!(name_parser(r"abc\:"), Ok(("", "abc:".to_string())));
+        assert_eq!(name_parser(r"\:abc"), Ok(("", ":abc".to_string())));
+        assert_eq!(name_parser("abc def"), Ok((" def", "abc".to_string())));
+        assert_eq!(name_parser(r"abc\:def"), Ok(("", "abc:def".to_string())));
+        assert_eq!(name_parser(r"abc\:\\"), Ok((r"\\", "abc:".to_string())));
+        assert_eq!(name_parser(r"\"), Err(Error((r"\", Many1))));
+        assert_eq!(name_parser(r"\\"), Err(Error((r"\\", Many1))));
+        assert_eq!(name_parser(r"\\\"), Err(Error((r"\\\", Many1))));
+        assert_eq!(name_parser(r"\\:\"), Err(Error((r"\\:\", Many1))));
+        assert_eq!(name_parser(" "), Err(Error((" ", Many1))));
+        assert_eq!(name_parser(""), Err(Error(("", Many1))));
+        assert_eq!(
+            name_parser("equation: foo"),
+            Ok((r": foo", "equation".to_string()))
+        );
+        assert_eq!(
+            name_parser("equation : foo"),
+            Ok((r" : foo", "equation".to_string()))
+        );
+        assert_eq!(
+            name_parser("equation [bar]: foo"),
+            Ok((r" [bar]: foo", "equation".to_string()))
+        );
+        assert_eq!(
+            name_parser("equation {bar}: foo"),
+            Ok((r" {bar}: foo", "equation".to_string()))
+        );
+
+        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE", r"\E"] {
+            assert_eq!(name_parser(e), Err(Error((e, Many1))));
+        }
+    }
+}
+
+#[cfg(test)]
+mod opts_parser_tests {
+    #[test]
+    fn opts_chunk_parser() {
+        use super::opts_chunk_parser;
+        use nom::error::ErrorKind::IsNot;
+        use nom::Err::Error;
+
+        assert_eq!(opts_chunk_parser(r"abc"), Ok(("", "abc")));
+        assert_eq!(opts_chunk_parser(r"\:abc"), Ok(("abc", ":")));
+        assert_eq!(opts_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
+        assert_eq!(opts_chunk_parser(r"(abc"), Ok(("", "(abc")));
+        assert_eq!(opts_chunk_parser(r"[abc"), Ok(("", "[abc")));
+        assert_eq!(opts_chunk_parser(r"\abc"), Ok(("abc", r"\")));
+        assert_eq!(opts_chunk_parser(r" abc"), Ok(("", " abc")));
+        assert_eq!(opts_chunk_parser(""), Err(Error(("", IsNot))));
+
+        for e in vec![":E", "%E"] {
+            assert_eq!(opts_chunk_parser(e), Err(Error((e, IsNot))));
+        }
+    }
+
+    #[test]
+    fn opts_parser() {
+        use super::opts_parser;
+
+        assert_eq!(opts_parser("abc"), Ok(("", "abc".to_string())));
+        assert_eq!(opts_parser(r"abc\:"), Ok(("", "abc:".to_string())));
+        assert_eq!(opts_parser(r"\:abc"), Ok(("", ":abc".to_string())));
+        assert_eq!(opts_parser("abc def"), Ok(("", "abc def".to_string())));
+        assert_eq!(opts_parser(r"abc\:def"), Ok(("", "abc:def".to_string())));
+        assert_eq!(opts_parser(r"abc\:\\"), Ok(("", r"abc:\\".to_string())));
+        assert_eq!(opts_parser(r"\"), Ok(("", r"\".to_string())));
+        assert_eq!(opts_parser(r"\\"), Ok(("", r"\\".to_string())));
+        assert_eq!(opts_parser(r"\\\"), Ok(("", r"\\\".to_string())));
+        assert_eq!(opts_parser(r"\\:\"), Ok(("", r"\:\".to_string())));
+        assert_eq!(opts_parser(" "), Ok(("", " ".to_string())));
+        assert_eq!(opts_parser(""), Ok(("", "".to_string())));
+        assert_eq!(
+            opts_parser("equation: foo"),
+            Ok((r": foo", "equation".to_string()))
+        );
+        assert_eq!(
+            opts_parser("equation : foo"),
+            Ok((r": foo", "equation ".to_string()))
+        );
+        assert_eq!(
+            opts_parser("equation [bar]: foo"),
+            Ok((r": foo", "equation [bar]".to_string()))
+        );
+        assert_eq!(
+            opts_parser("equation {bar}: foo"),
+            Ok((r": foo", "equation {bar}".to_string()))
+        );
+        assert_eq!(
+            opts_parser(r"equation {\bar\%}: foo"),
+            Ok((r": foo", r"equation {\bar\%}".to_string()))
+        );
+        assert_eq!(
+            opts_parser(r"equation {bar\: qux}: foo"),
+            Ok((r": foo", r"equation {bar: qux}".to_string()))
+        );
+
+        for e in vec![":E", "%E"] {
+            assert_eq!(opts_parser(e), Ok((e, "".to_string())));
+        }
+    }
+}
+
+#[cfg(test)]
+mod args_parser_tests {
+    #[test]
+    fn args_chunk_parser() {
+        use super::args_chunk_parser;
+        use nom::error::ErrorKind::IsNot;
+        use nom::Err::Error;
+
+        assert_eq!(args_chunk_parser(r"abc"), Ok(("", "abc")));
+        assert_eq!(args_chunk_parser(r"\:abc"), Ok((":abc", r"\")));
+        assert_eq!(args_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
+        assert_eq!(args_chunk_parser(r"(abc"), Ok(("", "(abc")));
+        assert_eq!(args_chunk_parser(r"[abc"), Ok(("", "[abc")));
+        assert_eq!(args_chunk_parser(r"\abc"), Ok(("abc", r"\")));
+        assert_eq!(args_chunk_parser(r" abc"), Ok(("", " abc")));
+        assert_eq!(args_chunk_parser(""), Err(Error(("", IsNot))));
+        assert_eq!(args_chunk_parser("%E"), Err(Error(("%E", IsNot))));
+    }
+
+    #[test]
+    fn args_parser() {
+        use super::args_parser;
+
+        assert_eq!(args_parser("abc"), Ok(("", "abc".to_string())));
+        assert_eq!(args_parser(r"abc\:"), Ok(("", r"abc\:".to_string())));
+        assert_eq!(args_parser(r"\:abc"), Ok(("", r"\:abc".to_string())));
+        assert_eq!(args_parser("abc def"), Ok(("", "abc def".to_string())));
+        assert_eq!(args_parser(r"abc\:def"), Ok(("", r"abc\:def".to_string())));
+        assert_eq!(args_parser(r"abc\:\\"), Ok(("", r"abc\:\\".to_string())));
+        assert_eq!(args_parser(r"\"), Ok(("", r"\".to_string())));
+        assert_eq!(args_parser(r"\\"), Ok(("", r"\\".to_string())));
+        assert_eq!(args_parser(r"\\\"), Ok(("", r"\\\".to_string())));
+        assert_eq!(args_parser(r"\\:\"), Ok(("", r"\\:\".to_string())));
+        assert_eq!(args_parser(" "), Ok(("", " ".to_string())));
+        assert_eq!(args_parser(""), Ok(("", "".to_string())));
+        assert_eq!(
+            args_parser("equation: foo"),
+            Ok((r"", "equation: foo".to_string()))
+        );
+        assert_eq!(
+            args_parser("equation : foo"),
+            Ok((r"", "equation : foo".to_string()))
+        );
+        assert_eq!(
+            args_parser("equation [bar]: foo"),
+            Ok((r"", "equation [bar]: foo".to_string()))
+        );
+        assert_eq!(
+            args_parser("equation {bar}: foo"),
+            Ok((r"", "equation {bar}: foo".to_string()))
+        );
+        assert_eq!(
+            args_parser(r"equation {\bar\%}: foo"),
+            Ok((r"", r"equation {\bar\%}: foo".to_string()))
+        );
+        assert_eq!(
+            args_parser(r"equation {bar\: qux}: foo"),
+            Ok((r"", r"equation {bar\: qux}: foo".to_string()))
+        );
+
+        assert_eq!(args_parser("%E"), Ok(("%E", "".to_string())));
+    }
+}
+
+#[cfg(test)]
 mod tests {
     #[test]
     fn hashline_helper_plain_lines() {
@@ -386,207 +599,6 @@ mod tests {
         assert_eq!(list_env_parser("    description  *"), Ok(("  *", ())));
         assert_eq!(list_env_parser("item"), Err(Error(("item", Tag))));
         assert_eq!(list_env_parser("   foobar"), Err(Error(("foobar", Tag))));
-    }
-
-    #[test]
-    fn escaped_colon() {
-        use super::escaped_colon;
-        use nom::error::ErrorKind::Tag;
-        use nom::Err::Error;
-
-        assert_eq!(escaped_colon(r"\:"), Ok(("", ":")));
-        assert_eq!(escaped_colon(r"\"), Err(Error((r"", Tag))));
-        assert_eq!(escaped_colon(r":\"), Err(Error((r":\", Tag))));
-        assert_eq!(escaped_colon(r"\\"), Err(Error((r"\", Tag))));
-        assert_eq!(escaped_colon(r"\a"), Err(Error((r"a", Tag))));
-        assert_eq!(escaped_colon(r"\;"), Err(Error((r";", Tag))));
-        assert_eq!(escaped_colon(""), Err(Error(("", Tag))));
-        assert_eq!(escaped_colon("ab"), Err(Error(("ab", Tag))));
-    }
-
-    #[test]
-    fn name_chunk_parser() {
-        use super::name_chunk_parser;
-        use nom::error::ErrorKind::IsNot;
-        use nom::Err::Error;
-
-        assert_eq!(name_chunk_parser("abc"), Ok(("", "abc")));
-        assert_eq!(name_chunk_parser(r"abc\:"), Ok((r"\:", "abc")));
-        assert_eq!(name_chunk_parser(r"\:abc"), Ok(("abc", ":")));
-        assert_eq!(name_chunk_parser(r"\abc"), Err(Error((r"\abc", IsNot))));
-        assert_eq!(name_chunk_parser(" "), Err(Error((" ", IsNot))));
-        assert_eq!(name_chunk_parser(""), Err(Error(("", IsNot))));
-
-        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE", r"\E"] {
-            assert_eq!(name_chunk_parser(e), Err(Error((e, IsNot))));
-        }
-    }
-
-    #[test]
-    fn name_parser() {
-        use super::name_parser;
-        use nom::error::ErrorKind::Many1;
-        use nom::Err::Error;
-
-        assert_eq!(name_parser("abc"), Ok(("", "abc".to_string())));
-        assert_eq!(name_parser(r"abc\:"), Ok(("", "abc:".to_string())));
-        assert_eq!(name_parser(r"\:abc"), Ok(("", ":abc".to_string())));
-        assert_eq!(name_parser("abc def"), Ok((" def", "abc".to_string())));
-        assert_eq!(name_parser(r"abc\:def"), Ok(("", "abc:def".to_string())));
-        assert_eq!(name_parser(r"abc\:\\"), Ok((r"\\", "abc:".to_string())));
-        assert_eq!(name_parser(r"\"), Err(Error((r"\", Many1))));
-        assert_eq!(name_parser(r"\\"), Err(Error((r"\\", Many1))));
-        assert_eq!(name_parser(r"\\\"), Err(Error((r"\\\", Many1))));
-        assert_eq!(name_parser(r"\\:\"), Err(Error((r"\\:\", Many1))));
-        assert_eq!(name_parser(" "), Err(Error((" ", Many1))));
-        assert_eq!(name_parser(""), Err(Error(("", Many1))));
-        assert_eq!(
-            name_parser("equation: foo"),
-            Ok((r": foo", "equation".to_string()))
-        );
-        assert_eq!(
-            name_parser("equation : foo"),
-            Ok((r" : foo", "equation".to_string()))
-        );
-        assert_eq!(
-            name_parser("equation [bar]: foo"),
-            Ok((r" [bar]: foo", "equation".to_string()))
-        );
-        assert_eq!(
-            name_parser("equation {bar}: foo"),
-            Ok((r" {bar}: foo", "equation".to_string()))
-        );
-
-        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE", r"\E"] {
-            assert_eq!(name_parser(e), Err(Error((e, Many1))));
-        }
-    }
-
-    #[test]
-    fn opts_chunk_parser() {
-        use super::opts_chunk_parser;
-        use nom::error::ErrorKind::IsNot;
-        use nom::Err::Error;
-
-        assert_eq!(opts_chunk_parser(r"abc"), Ok(("", "abc")));
-        assert_eq!(opts_chunk_parser(r"\:abc"), Ok(("abc", ":")));
-        assert_eq!(opts_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
-        assert_eq!(opts_chunk_parser(r"(abc"), Ok(("", "(abc")));
-        assert_eq!(opts_chunk_parser(r"[abc"), Ok(("", "[abc")));
-        assert_eq!(opts_chunk_parser(r"\abc"), Ok(("abc", r"\")));
-        assert_eq!(opts_chunk_parser(r" abc"), Ok(("", " abc")));
-        assert_eq!(opts_chunk_parser(""), Err(Error(("", IsNot))));
-
-        for e in vec![":E", "%E"] {
-            assert_eq!(opts_chunk_parser(e), Err(Error((e, IsNot))));
-        }
-    }
-
-    #[test]
-    fn opts_parser() {
-        use super::opts_parser;
-
-        assert_eq!(opts_parser("abc"), Ok(("", "abc".to_string())));
-        assert_eq!(opts_parser(r"abc\:"), Ok(("", "abc:".to_string())));
-        assert_eq!(opts_parser(r"\:abc"), Ok(("", ":abc".to_string())));
-        assert_eq!(opts_parser("abc def"), Ok(("", "abc def".to_string())));
-        assert_eq!(opts_parser(r"abc\:def"), Ok(("", "abc:def".to_string())));
-        assert_eq!(opts_parser(r"abc\:\\"), Ok(("", r"abc:\\".to_string())));
-        assert_eq!(opts_parser(r"\"), Ok(("", r"\".to_string())));
-        assert_eq!(opts_parser(r"\\"), Ok(("", r"\\".to_string())));
-        assert_eq!(opts_parser(r"\\\"), Ok(("", r"\\\".to_string())));
-        assert_eq!(opts_parser(r"\\:\"), Ok(("", r"\:\".to_string())));
-        assert_eq!(opts_parser(" "), Ok(("", " ".to_string())));
-        assert_eq!(opts_parser(""), Ok(("", "".to_string())));
-        assert_eq!(
-            opts_parser("equation: foo"),
-            Ok((r": foo", "equation".to_string()))
-        );
-        assert_eq!(
-            opts_parser("equation : foo"),
-            Ok((r": foo", "equation ".to_string()))
-        );
-        assert_eq!(
-            opts_parser("equation [bar]: foo"),
-            Ok((r": foo", "equation [bar]".to_string()))
-        );
-        assert_eq!(
-            opts_parser("equation {bar}: foo"),
-            Ok((r": foo", "equation {bar}".to_string()))
-        );
-        assert_eq!(
-            opts_parser(r"equation {\bar\%}: foo"),
-            Ok((r": foo", r"equation {\bar\%}".to_string()))
-        );
-        assert_eq!(
-            opts_parser(r"equation {bar\: qux}: foo"),
-            Ok((r": foo", r"equation {bar: qux}".to_string()))
-        );
-
-        for e in vec![":E", "%E"] {
-            assert_eq!(opts_parser(e), Ok((e, "".to_string())));
-        }
-    }
-
-    #[test]
-    fn args_chunk_parser() {
-        use super::args_chunk_parser;
-        use nom::error::ErrorKind::IsNot;
-        use nom::Err::Error;
-
-        assert_eq!(args_chunk_parser(r"abc"), Ok(("", "abc")));
-        assert_eq!(args_chunk_parser(r"\:abc"), Ok((":abc", r"\")));
-        assert_eq!(args_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
-        assert_eq!(args_chunk_parser(r"(abc"), Ok(("", "(abc")));
-        assert_eq!(args_chunk_parser(r"[abc"), Ok(("", "[abc")));
-        assert_eq!(args_chunk_parser(r"\abc"), Ok(("abc", r"\")));
-        assert_eq!(args_chunk_parser(r" abc"), Ok(("", " abc")));
-        assert_eq!(args_chunk_parser(""), Err(Error(("", IsNot))));
-        assert_eq!(args_chunk_parser("%E"), Err(Error(("%E", IsNot))));
-    }
-
-    #[test]
-    fn args_parser() {
-        use super::args_parser;
-
-        assert_eq!(args_parser("abc"), Ok(("", "abc".to_string())));
-        assert_eq!(args_parser(r"abc\:"), Ok(("", r"abc\:".to_string())));
-        assert_eq!(args_parser(r"\:abc"), Ok(("", r"\:abc".to_string())));
-        assert_eq!(args_parser("abc def"), Ok(("", "abc def".to_string())));
-        assert_eq!(args_parser(r"abc\:def"), Ok(("", r"abc\:def".to_string())));
-        assert_eq!(args_parser(r"abc\:\\"), Ok(("", r"abc\:\\".to_string())));
-        assert_eq!(args_parser(r"\"), Ok(("", r"\".to_string())));
-        assert_eq!(args_parser(r"\\"), Ok(("", r"\\".to_string())));
-        assert_eq!(args_parser(r"\\\"), Ok(("", r"\\\".to_string())));
-        assert_eq!(args_parser(r"\\:\"), Ok(("", r"\\:\".to_string())));
-        assert_eq!(args_parser(" "), Ok(("", " ".to_string())));
-        assert_eq!(args_parser(""), Ok(("", "".to_string())));
-        assert_eq!(
-            args_parser("equation: foo"),
-            Ok((r"", "equation: foo".to_string()))
-        );
-        assert_eq!(
-            args_parser("equation : foo"),
-            Ok((r"", "equation : foo".to_string()))
-        );
-        assert_eq!(
-            args_parser("equation [bar]: foo"),
-            Ok((r"", "equation [bar]: foo".to_string()))
-        );
-        assert_eq!(
-            args_parser("equation {bar}: foo"),
-            Ok((r"", "equation {bar}: foo".to_string()))
-        );
-        assert_eq!(
-            args_parser(r"equation {\bar\%}: foo"),
-            Ok((r"", r"equation {\bar\%}: foo".to_string()))
-        );
-        assert_eq!(
-            args_parser(r"equation {bar\: qux}: foo"),
-            Ok((r"", r"equation {bar\: qux}: foo".to_string()))
-        );
-
-        assert_eq!(args_parser("%E"), Ok(("%E", "".to_string())));
     }
 }
 // LCOV_EXCL_STOP
