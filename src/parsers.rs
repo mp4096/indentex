@@ -249,7 +249,7 @@ mod helper_parser_tests {
 }
 
 #[cfg(test)]
-mod name_parser_tests {
+mod name_chunk_parser_spec {
     #[test]
     fn name_chunk_parser() {
         use super::name_chunk_parser;
@@ -267,45 +267,174 @@ mod name_parser_tests {
             assert_eq!(name_chunk_parser(e), Err(Error((e, IsNot))));
         }
     }
+}
+
+#[cfg(test)]
+mod name_parser_spec {
+    use super::name_parser;
 
     #[test]
-    fn name_parser() {
-        use super::name_parser;
+    fn should_take_whole_input() {
+        for input in vec![
+            "abc",
+            "äüß",
+            "абв",
+            "!!",
+            "@@",
+            "##",
+            "&&",
+            "==",
+            "--",
+            "__",
+            "//",
+            ";;",
+            ",,",
+            "..",
+            "**",
+            "||",
+            "??",
+            "\"\"",
+            "''",
+            "section",
+            "section*",
+            "equation*",
+        ] {
+            assert_eq!(name_parser(input), Ok(("", input.to_string())));
+        }
+    }
+
+    #[test]
+    fn should_take_whole_input_and_replace_escaped_colons() {
+        for input in vec![
+            r"\:abc",
+            r"äü\:ß",
+            r"аб\:в",
+            r"!!\:",
+            r"@\:@",
+            r"\:##",
+            r"&\:&",
+            r"==\:",
+            r"--\:",
+            r"_\:_",
+            r"\://",
+            r";\:;",
+            r",\:,",
+            r".\:.",
+            r"*\:*",
+            r"\:||",
+            r"\:??",
+            "\"\\:\"",
+            r"\:''",
+            r"\:section",
+            r"section*\:",
+            r"\:equation*",
+            r"\:\:\:\:",
+        ] {
+            assert_eq!(
+                name_parser(input),
+                Ok(("", input.replace(r"\:", ":").to_string()))
+            );
+        }
+    }
+
+    #[test]
+    fn should_stop_at_a_terminator_at_the_beginning() {
         use nom::error::ErrorKind::Many1;
         use nom::Err::Error;
 
-        assert_eq!(name_parser("abc"), Ok(("", "abc".to_string())));
-        assert_eq!(name_parser(r"abc\:"), Ok(("", "abc:".to_string())));
-        assert_eq!(name_parser(r"\:abc"), Ok(("", ":abc".to_string())));
-        assert_eq!(name_parser("abc def"), Ok((" def", "abc".to_string())));
-        assert_eq!(name_parser(r"abc\:def"), Ok(("", "abc:def".to_string())));
-        assert_eq!(name_parser(r"abc\:\\"), Ok((r"\\", "abc:".to_string())));
-        assert_eq!(name_parser(r"\"), Err(Error((r"\", Many1))));
-        assert_eq!(name_parser(r"\\"), Err(Error((r"\\", Many1))));
-        assert_eq!(name_parser(r"\\\"), Err(Error((r"\\\", Many1))));
-        assert_eq!(name_parser(r"\\:\"), Err(Error((r"\\:\", Many1))));
-        assert_eq!(name_parser(" "), Err(Error((" ", Many1))));
-        assert_eq!(name_parser(""), Err(Error(("", Many1))));
+        for terminator in " :%([{\t\\".chars() {
+            for valid_input in vec![
+                "abc",
+                "äüß",
+                "абв",
+                "!!",
+                "@@",
+                "##",
+                "&&",
+                "==",
+                "--",
+                "__",
+                "//",
+                ";;",
+                ",,",
+                "..",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "section",
+                "section*",
+                "equation*",
+                r"\:\:*",
+            ] {
+                let input = terminator.to_string() + valid_input;
+                assert_eq!(name_parser(&input), Err(Error((input.as_ref(), Many1))));
+            }
+        }
+    }
+
+    #[test]
+    fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
+        for terminator in " :%([{\t\\".chars() {
+            for valid_input in vec![
+                "abc",
+                "äüß",
+                "абв",
+                "!!",
+                "@@",
+                "##",
+                "&&",
+                "==",
+                "--",
+                "__",
+                "//",
+                ";;",
+                ",,",
+                "..",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "section",
+                "section*",
+                "equation*",
+                r"\:\:*",
+            ] {
+                let expected_taken = valid_input.replace(r"\:", ":").to_string();
+                let expected_rest = terminator.to_string() + valid_input;
+                let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                assert_eq!(
+                    name_parser(&input_with_terminator),
+                    Ok((expected_rest.as_ref(), expected_taken))
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn realistic_examples() {
         assert_eq!(
             name_parser("equation: foo"),
-            Ok((r": foo", "equation".to_string()))
+            Ok((": foo", "equation".to_string()))
         );
         assert_eq!(
             name_parser("equation : foo"),
-            Ok((r" : foo", "equation".to_string()))
+            Ok((" : foo", "equation".to_string()))
         );
         assert_eq!(
-            name_parser("equation [bar]: foo"),
-            Ok((r" [bar]: foo", "equation".to_string()))
+            name_parser("equation* : foo"),
+            Ok((" : foo", "equation*".to_string()))
         );
         assert_eq!(
-            name_parser("equation {bar}: foo"),
-            Ok((r" {bar}: foo", "equation".to_string()))
+            name_parser("equation[bar]: foo"),
+            Ok(("[bar]: foo", "equation".to_string()))
         );
-
-        for e in vec![":E", "%E", "(E", "[E", "{E", " E", "\tE", r"\E"] {
-            assert_eq!(name_parser(e), Err(Error((e, Many1))));
-        }
+        assert_eq!(
+            name_parser(r"foo\:bar: qux"),
+            Ok((": qux", "foo:bar".to_string()))
+        );
     }
 }
 
