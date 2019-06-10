@@ -142,6 +142,7 @@ impl Environment {
     }
 }
 
+// LCOV_EXCL_START
 #[cfg(test)]
 mod tests {
     #[test]
@@ -327,3 +328,4 @@ mod tests {
         assert_eq!(env_2.indent_depth(), 2);
     }
 }
+// LCOV_EXCL_STOP
