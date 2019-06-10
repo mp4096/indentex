@@ -875,11 +875,185 @@ mod tests {
     }
 
     #[cfg(test)]
+    mod hashline_parser_spec {
+        use super::super::hashline_parser;
+
+        #[test]
+        fn valid_hashlines() {
+            use super::super::RawHashlineParseData;
+
+            for (input, expected_raw_parse_data) in vec![
+                (
+                    "# foo:      ",
+                    RawHashlineParseData::new(
+                        0,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    " # foo: bar   ",
+                    RawHashlineParseData::new(
+                        1,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "bar".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "  # foo[bar]:",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        "[bar]".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "   # foo[bar]: qux",
+                    RawHashlineParseData::new(
+                        3,
+                        "foo".to_string(),
+                        "[bar]".to_string(),
+                        "qux".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    r"    # foo[\:]: bar",
+                    RawHashlineParseData::new(
+                        4,
+                        "foo".to_string(),
+                        "[:]".to_string(),
+                        "bar".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "   # foo: % bar",
+                    RawHashlineParseData::new(
+                        3,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "% bar".to_string(),
+                    ),
+                ),
+                (
+                    "  # foo: bar % baz",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "bar".to_string(),
+                        "% baz".to_string(),
+                    ),
+                ),
+                (
+                    r" # foo: bar\% % baz   ",
+                    RawHashlineParseData::new(
+                        1,
+                        "foo".to_string(),
+                        "".to_string(),
+                        r"bar\%".to_string(),
+                        "% baz".to_string(),
+                    ),
+                ),
+                (
+                    r"# foo\:bar:",
+                    RawHashlineParseData::new(
+                        0,
+                        "foo:bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    " # foo_bar:",
+                    RawHashlineParseData::new(
+                        1,
+                        "foo_bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "  # foo bar:",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        "bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    r"  # foo\bar:",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        r"\bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+            ] {
+                assert_eq!(hashline_parser(input), Ok(("", expected_raw_parse_data)),);
+            }
+        }
+
+        #[test]
+        fn not_hashlines_incorrect_begin() {
+            use nom::error::ErrorKind::Tag;
+            use nom::Err::Error;
+
+            for (input, expected_rest) in vec![
+                (" \t# foo:", "\t# foo:"), // consume whitespace, but stopped at the tab
+                (r" \#", r"\#"),           // consume whitespace, but stopped at the backslash
+                ("#foo:", "#foo:"),        // could not consume "# "
+            ] {
+                assert_eq!(hashline_parser(input), Err(Error((expected_rest, Tag))));
+            }
+        }
+
+        #[test]
+        fn not_hashlines_name_not_found() {
+            use nom::error::ErrorKind::Many1;
+            use nom::Err::Error;
+
+            for (input, expected_rest) in vec![
+                (" #  foo:", " foo:"), // consume "# " and stop immediately at the second whitespace
+                ("# [foo:", "[foo:"),
+            ] {
+                assert_eq!(hashline_parser(input), Err(Error((expected_rest, Many1))));
+            }
+        }
+
+        #[test]
+        fn not_hashlines_colon_not_found() {
+            use nom::error::ErrorKind::Tag;
+            use nom::Err::Error;
+
+            for input in vec!["# foo", "  # foo bar", r"  # foo \%    \:", "# #"] {
+                assert_eq!(hashline_parser(input), Err(Error(("", Tag))));
+            }
+        }
+    }
+
+    #[cfg(test)]
     mod itemline_parser_spec {
-        use super::super::{itemline_parser, RawItemlineParseData};
+        use super::super::itemline_parser;
 
         #[test]
         fn valid_itemlines() {
+            use super::super::RawItemlineParseData;
+
             for (input, expected_raw_parse_data) in vec![
                 ("*", RawItemlineParseData::new(0, "".to_string())),
                 ("*  ", RawItemlineParseData::new(0, "".to_string())),
