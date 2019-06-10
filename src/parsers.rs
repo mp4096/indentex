@@ -410,10 +410,7 @@ mod tests {
         #[test]
         fn should_take_whole_input_and_replace_escaped_colons() {
             for input in name_parser_valid_input_with_escaped_colons_examples!() {
-                assert_eq!(
-                    name_parser(input),
-                    Ok(("", input.replace(r"\:", ":")))
-                );
+                assert_eq!(name_parser(input), Ok(("", input.replace(r"\:", ":"))));
             }
         }
 
@@ -630,10 +627,7 @@ mod tests {
                 opts_chunk_parser("equation: foo"),
                 Ok((": foo", "equation"))
             );
-            assert_eq!(
-                opts_chunk_parser(r"\: foo"),
-                Ok((" foo", ":"))
-            );
+            assert_eq!(opts_chunk_parser(r"\: foo"), Ok((" foo", ":")));
             assert_eq!(
                 opts_chunk_parser(r"\% equation : foo"),
                 Ok((" equation : foo", r"\%"))
@@ -667,30 +661,35 @@ mod tests {
         #[test]
         fn should_take_whole_input_and_replace_escaped_colons() {
             for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
-                assert_eq!(opts_parser(valid_input), Ok(("", valid_input.replace(r"\:", ":"))));
+                assert_eq!(
+                    opts_parser(valid_input),
+                    Ok(("", valid_input.replace(r"\:", ":")))
+                );
             }
         }
 
         #[test]
         fn should_stop_at_a_terminator_at_the_beginning() {
             for terminator in ":%".chars() {
-             for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
-                let input = terminator.to_string() + valid_input;
-                assert_eq!(opts_parser(&input), Ok((input.as_ref(), "".to_string())));
-            }}
+                for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                    let input = terminator.to_string() + valid_input;
+                    assert_eq!(opts_parser(&input), Ok((input.as_ref(), "".to_string())));
+                }
+            }
         }
 
         #[test]
         fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
             for terminator in ":%".chars() {
-            for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
-                let expected_rest = terminator.to_string() + valid_input.as_ref();
-                let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
-                assert_eq!(
-                    opts_parser(&input_with_terminator),
-                    Ok((expected_rest.as_ref(), valid_input.replace(r"\:", ":")))
-                );
-            }}
+                for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                    let expected_rest = terminator.to_string() + valid_input.as_ref();
+                    let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        opts_parser(&input_with_terminator),
+                        Ok((expected_rest.as_ref(), valid_input.replace(r"\:", ":")))
+                    );
+                }
+            }
         }
 
         #[test]
