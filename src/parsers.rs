@@ -88,7 +88,7 @@ fn opts_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     use nom::branch::alt;
     use nom::bytes::complete::{is_not, tag};
 
-    alt((escaped_colon, tag("\\%"), tag("\\"), is_not("\\:%")))(input)
+    alt((escaped_colon, tag(r"\%"), tag(r"\"), is_not(r"\:%")))(input)
 }
 
 #[inline]
@@ -108,7 +108,7 @@ fn args_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
     use nom::branch::alt;
     use nom::bytes::complete::{is_not, tag};
 
-    alt((tag("\\%"), tag("\\"), is_not("\\%")))(input)
+    alt((tag(r"\%"), tag(r"\"), is_not(r"\%")))(input)
 }
 
 #[inline]
