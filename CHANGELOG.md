@@ -1,10 +1,23 @@
 :warning: Before the 1.0 release, we only document minor releases here!
 
-# 0.5.0-alpha
-Commit 518d4854cbd353779495a0dfc3995a5941dec09e
+# 0.5.0-beta
+[PR #49](https://github.com/mp4096/indentex/pull/49)
+
+### :warning: Breaking changes
+
+* No backslashes are now allowed in the command name part.
+
+| Indentex source  | Transpiled with `0.4.0`         | Transpiled with `0.5.0`     |
+|:-----------------|:--------------------------------|:----------------------------|
+| `# foo\bar: baz` | `\foo\bar{baz}`                 | `\foo\bar{baz}`             |
+| `# foo\bar:`     | `\begin{foo\bar}⏎\end{foo\bar}` | `\begin{foo}\bar⏎\end{foo}` |
+
+### Non-breaking changes
 
 * Migrated to nom 5
-* Change parsing logic
+* Changed parsing logic
+* Refactor code
+* Add unit tests
 
 # 0.4.0 (2017-02-18)
 Commit 2adba137618d72c0251ddedfbbe01cc076536ce7
