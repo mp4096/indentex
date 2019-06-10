@@ -1085,5 +1085,180 @@ mod tests {
             }
         }
     }
+
+    #[cfg(test)]
+    mod process_line_spec {
+        use super::super::process_line;
+
+        #[test]
+        fn yield_single_line_command() {
+            use super::super::Hashline::PlainLine;
+
+            for is_a_list_environment in vec![true, false] {
+                for (input, expected_result) in vec![
+                    (" # foo: bar", r" \foo{bar}"),
+                    ("  # foo{qux}: bar", r"  \foo{qux}{bar}"),
+                    ("  # foo    [qux]: bar", r"  \foo[qux]{bar}"),
+                    ("  # section*: bar", r"  \section*{bar}"),
+                    ("# section[qux]: bar", r"\section[qux]{bar}"),
+                    ("  # foo: bar % baz", r"  \foo{bar} % baz"),
+                    ("  # foo: bar      % baz", r"  \foo{bar} % baz"),
+                    ("  # foo[qux]: bar      % baz", r"  \foo[qux]{bar} % baz"),
+                    (r"  # foo[\:qux]: bar   % baz", r"  \foo[:qux]{bar} % baz"),
+                    (r"  # foo: bar \% % baz", r"  \foo{bar \%} % baz"),
+                    (r"  # foo: bar \%% baz", r"  \foo{bar \%} % baz"),
+                ] {
+                    assert_eq!(
+                        process_line(input.to_string(), is_a_list_environment),
+                        PlainLine(expected_result.to_string())
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn yield_plainline_outside_a_list_environment() {
+            use super::super::Hashline::PlainLine;
+
+            for s in vec![
+                "foo bar 123",
+                "  * 123 foo bar",
+                r"$\frac{1}{2}",
+                r"\begin{equation}",
+                r"\end{equation}",
+                r"\textbf{1}",
+                r"\newcommand{\foo}[1]{\textrm{#1}}",
+                "",
+                " ",
+                "\t",
+                " * foo",
+                r"  \\",
+            ] {
+                assert_eq!(process_line(s.to_string(), false), PlainLine(s.to_string()));
+            }
+        }
+
+        #[test]
+        fn yield_itemline() {
+            use super::super::Hashline::PlainLine;
+
+            for (input, expected_result) in vec![
+                ("* foo bar 123", r"\item foo bar 123"),
+                ("  * 123 foo bar", r"  \item 123 foo bar"),
+                (r"   * $\frac{1}{2}", r"   \item $\frac{1}{2}"),
+                (r"* \textbf{1}", r"\item \textbf{1}"),
+                ("  *", r"  \item"),
+                ("  *[A] B", r"  \item [A] B"),
+            ] {
+                assert_eq!(
+                    process_line(input.to_string(), true),
+                    PlainLine(expected_result.to_string())
+                );
+            }
+        }
+
+        #[test]
+        fn yield_plainline_in_a_list_environment() {
+            use super::super::Hashline::PlainLine;
+
+            for s in vec![
+                r"\item foo bar 123",
+                "   123 foo bar",
+                r"    $\frac{1}{2}",
+                r" \textbf{1}",
+                r"  \\",
+                "  ",
+                "  [A] B",
+            ] {
+                assert_eq!(process_line(s.to_string(), true), PlainLine(s.to_string()));
+            }
+        }
+
+        #[test]
+        fn yield_environment() {
+            use super::super::Hashline::OpenEnv;
+            use crate::parsing_types::Environment;
+
+            for is_a_list_environment in vec![true, false] {
+                for (input, expected_result) in vec![
+                    (
+                        " # foo: ",
+                        Environment::new(
+                            1,
+                            "foo".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # foo{qux}:",
+                        Environment::new(
+                            2,
+                            "foo".to_string(),
+                            "{qux}".to_string(),
+                            "".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # foo    [qux]: %",
+                        Environment::new(
+                            2,
+                            "foo".to_string(),
+                            "[qux]".to_string(),
+                            "%".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # equation*:  % bar",
+                        Environment::new(
+                            2,
+                            "equation*".to_string(),
+                            "".to_string(),
+                            "% bar".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "# equation*      :  ",
+                        Environment::new(
+                            0,
+                            "equation*".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # itemize:   % baz",
+                        Environment::new(
+                            2,
+                            "itemize".to_string(),
+                            "".to_string(),
+                            "% baz".to_string(),
+                            true,
+                        ),
+                    ),
+                    (
+                        r"   # foo[\:qux]:% baz",
+                        Environment::new(
+                            3,
+                            "foo".to_string(),
+                            "[:qux]".to_string(),
+                            "% baz".to_string(),
+                            false,
+                        ),
+                    ),
+                ] {
+                    assert_eq!(
+                        process_line(input.to_string(), is_a_list_environment),
+                        OpenEnv(expected_result),
+                    );
+                }
+            }
+        }
+    }
 }
 // LCOV_EXCL_STOP

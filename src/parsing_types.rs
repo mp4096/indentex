@@ -112,6 +112,22 @@ impl From<RawItemlineParseData> for Hashline {
 }
 
 impl Environment {
+    pub fn new(
+        indent_depth: usize,
+        name: String,
+        opts: String,
+        comment: String,
+        is_list_like: bool,
+    ) -> Self {
+        Self {
+            indent_depth,
+            name,
+            opts,
+            comment,
+            is_list_like,
+        }
+    }
+
     pub fn latex_begin(&self) -> String {
         format!(
             r"{dummy:ind$}\begin{{{name}}}{opts}{comment_sep}{comment}",
