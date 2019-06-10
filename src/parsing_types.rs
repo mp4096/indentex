@@ -64,9 +64,9 @@ impl From<RawHashlineParseData> for Hashline {
             let is_list_like = is_a_list_environment(raw_hashline.name.as_ref());
             Hashline::OpenEnv(Environment {
                 indent_depth: raw_hashline.indent_depth,
-                name: raw_hashline.name, // FIXME: Avoid reallocation here
-                opts: raw_hashline.opts, // FIXME: Avoid reallocation here
-                comment: raw_hashline.comment, // FIXME: Avoid reallocation here
+                name: raw_hashline.name,
+                opts: raw_hashline.opts,
+                comment: raw_hashline.comment,
                 is_list_like: is_list_like,
             })
         } else {
