@@ -1,5 +1,3 @@
-use crate::parsers::list_env_parser;
-
 pub struct RawHashlineParseData {
     indent_depth: usize,
     name: String,
@@ -41,6 +39,17 @@ impl RawHashlineParseData {
     }
 }
 
+#[inline]
+fn is_a_list_environment(input: &str) -> bool {
+    fn parser(input: &str) -> nom::IResult<&str, &str> {
+        use nom::branch::alt;
+        use nom::bytes::complete::tag;
+
+        alt((tag("itemize"), tag("enumerate"), tag("description")))(input)
+    }
+    parser(input.trim_start()).is_ok()
+}
+
 impl From<RawHashlineParseData> for Hashline {
     fn from(raw_hashline: RawHashlineParseData) -> Self {
         // FIXME: Trimming should not be a part of data conversion
@@ -52,7 +61,7 @@ impl From<RawHashlineParseData> for Hashline {
                 name: raw_hashline.name.trim().to_string(), // FIXME: Avoid reallocation here
                 opts: raw_hashline.opts.trim().to_string(), // FIXME: Avoid reallocation here
                 comment: raw_hashline.comment.trim().to_string(), // FIXME: Avoid reallocation here
-                is_list_like: list_env_parser(raw_hashline.name.as_ref()).is_ok(),
+                is_list_like: is_a_list_environment(raw_hashline.name.as_ref()),
             })
         } else {
             // If there are some args, it's a single-line command
@@ -107,6 +116,19 @@ impl Environment {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn list_environment_recognition() {
+        use super::is_a_list_environment;
+
+        assert_eq!(is_a_list_environment("itemize"), true);
+        assert_eq!(is_a_list_environment("enumerate*"), true);
+        assert_eq!(is_a_list_environment("  description  *"), true);
+        assert_eq!(is_a_list_environment("    descriptionitemize"), true);
+        assert_eq!(is_a_list_environment("item"), false);
+        assert_eq!(is_a_list_environment("   itemiz"), false);
+        assert_eq!(is_a_list_environment("   foobar"), false);
+    }
+
     #[cfg(test)]
     mod raw_hashline_parser_data_into_hashline {
         use super::super::{Hashline, RawHashlineParseData};

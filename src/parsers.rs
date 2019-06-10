@@ -1,17 +1,6 @@
 use crate::parsing_types::{Hashline, RawHashlineParseData};
 
 #[inline]
-pub fn list_env_parser(input: &str) -> nom::IResult<&str, ()> {
-    use nom::branch::alt;
-    use nom::bytes::complete::{is_a, tag};
-    use nom::combinator::opt;
-
-    let (input, _) = opt(is_a(" "))(input)?;
-    let (input, _) = alt((tag("itemize"), tag("enumerate"), tag("description")))(input)?;
-    Ok((input, ()))
-}
-
-#[inline]
 fn escaped_colon(input: &str) -> nom::IResult<&str, &str> {
     use nom::bytes::complete::tag;
     use nom::sequence::preceded;
@@ -946,19 +935,6 @@ mod tests {
             assert_eq!(process_itemline("  abc * def"), None);
             assert_eq!(process_itemline("  \\*  "), None);
             assert_eq!(process_itemline("\\*  "), None);
-        }
-
-        #[test]
-        fn list_env_parser() {
-            use super::super::list_env_parser;
-            use nom::error::ErrorKind::Tag;
-            use nom::Err::Error;
-
-            assert_eq!(list_env_parser("itemize"), Ok(("", ())));
-            assert_eq!(list_env_parser("enumerate*"), Ok(("*", ())));
-            assert_eq!(list_env_parser("    description  *"), Ok(("  *", ())));
-            assert_eq!(list_env_parser("item"), Err(Error(("item", Tag))));
-            assert_eq!(list_env_parser("   foobar"), Err(Error(("foobar", Tag))));
         }
     }
 }
