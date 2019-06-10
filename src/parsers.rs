@@ -949,37 +949,6 @@ mod tests {
         }
 
         #[test]
-        fn environment_methods() {
-            use super::super::Environment;
-
-            let env_1 = Environment {
-                indent_depth: 0,
-                name: "foo".to_string(),
-                opts: "bar".to_string(),
-                comment: "% baz".to_string(),
-                is_list_like: true,
-            };
-
-            assert_eq!(env_1.latex_begin(), "\\begin{foo}bar % baz");
-            assert_eq!(env_1.latex_end(), "\\end{foo}");
-            assert_eq!(env_1.is_list_like(), true);
-            assert_eq!(env_1.indent_depth(), 0);
-
-            let env_2 = Environment {
-                indent_depth: 2,
-                name: "abc".to_string(),
-                opts: "def".to_string(),
-                comment: "".to_string(),
-                is_list_like: false,
-            };
-
-            assert_eq!(env_2.latex_begin(), "  \\begin{abc}def");
-            assert_eq!(env_2.latex_end(), "  \\end{abc}");
-            assert_eq!(env_2.is_list_like(), false);
-            assert_eq!(env_2.indent_depth(), 2);
-        }
-
-        #[test]
         fn list_env_parser() {
             use super::super::list_env_parser;
             use nom::error::ErrorKind::Tag;
