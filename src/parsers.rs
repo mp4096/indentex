@@ -325,7 +325,7 @@ mod tests {
         fn should_take_only_the_escaped_colon_at_the_beginning() {
             for valid_input in name_parser_valid_input_examples!() {
                 let input = r"\:".to_string() + valid_input;
-                assert_eq!(name_chunk_parser(&input), Ok((valid_input, r":")));
+                assert_eq!(name_chunk_parser(&input), Ok((valid_input, ":")));
             }
         }
 
@@ -412,7 +412,7 @@ mod tests {
             for input in name_parser_valid_input_with_escaped_colons_examples!() {
                 assert_eq!(
                     name_parser(input),
-                    Ok(("", input.replace(r"\:", ":").to_string()))
+                    Ok(("", input.replace(r"\:", ":")))
                 );
             }
         }
@@ -434,12 +434,11 @@ mod tests {
         fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
             for terminator in " :%([{\t\\".chars() {
                 for valid_input in name_parser_valid_input_with_escaped_colons_examples!() {
-                    let expected_taken = valid_input.replace(r"\:", ":").to_string();
                     let expected_rest = terminator.to_string() + valid_input;
                     let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
                     assert_eq!(
                         name_parser(&input_with_terminator),
-                        Ok((expected_rest.as_ref(), expected_taken))
+                        Ok((expected_rest.as_ref(), valid_input.replace(r"\:", ":")))
                     );
                 }
             }
@@ -470,32 +469,232 @@ mod tests {
         }
     }
 
+    macro_rules! opts_parser_valid_input_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                "!!",
+                "@@",
+                "##",
+                "&&",
+                "==",
+                "-;-",
+                "__",
+                "//",
+                ";;",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
+
+    macro_rules! opts_parser_valid_input_with_escaped_chars_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                r"\!!",
+                r"@@\:",
+                r"\\##",
+                r"&\%&",
+                r"=\\\\\=",
+                r"-\:\;-",
+                r"\%__",
+                r"//\%",
+                r";;\%",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
+
     #[cfg(test)]
-    mod opts_parser_tests {
+    mod opts_chunk_parser_spec {
+        use super::super::opts_chunk_parser;
+
         #[test]
-        fn opts_chunk_parser() {
-            use super::super::opts_chunk_parser;
-            use nom::error::ErrorKind::IsNot;
-            use nom::Err::Error;
-
-            assert_eq!(opts_chunk_parser(r"abc"), Ok(("", "abc")));
-            assert_eq!(opts_chunk_parser(r"\:abc"), Ok(("abc", ":")));
-            assert_eq!(opts_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
-            assert_eq!(opts_chunk_parser(r"(abc"), Ok(("", "(abc")));
-            assert_eq!(opts_chunk_parser(r"[abc"), Ok(("", "[abc")));
-            assert_eq!(opts_chunk_parser(r"\abc"), Ok(("abc", r"\")));
-            assert_eq!(opts_chunk_parser(r" abc"), Ok(("", " abc")));
-            assert_eq!(opts_chunk_parser(""), Err(Error(("", IsNot))));
-
-            for e in vec![":E", "%E"] {
-                assert_eq!(opts_chunk_parser(e), Err(Error((e, IsNot))));
+        fn should_take_whole_input() {
+            for input in opts_parser_valid_input_examples!() {
+                assert_eq!(opts_chunk_parser(input), Ok(("", input)));
             }
         }
 
         #[test]
-        fn opts_parser() {
-            use super::super::opts_parser;
+        fn should_take_only_the_escaped_percent_at_the_beginning() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                let input = r"\%".to_string() + valid_input;
+                assert_eq!(opts_chunk_parser(&input), Ok((valid_input, r"\%")));
+            }
+        }
 
+        #[test]
+        fn should_take_only_the_escaped_colon_at_the_beginning() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                let input = r"\:".to_string() + valid_input;
+                assert_eq!(opts_chunk_parser(&input), Ok((valid_input, ":")));
+            }
+        }
+
+        #[test]
+        fn should_take_only_the_backslash_at_the_beginning() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                let input = r"\".to_string() + valid_input;
+                assert_eq!(opts_chunk_parser(&input), Ok((valid_input, r"\")));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            use nom::error::ErrorKind::IsNot;
+            use nom::Err::Error;
+
+            for terminator in "%:".chars() {
+                for valid_input in opts_parser_valid_input_examples!() {
+                    let input = terminator.to_string() + valid_input;
+                    assert_eq!(
+                        opts_chunk_parser(&input),
+                        Err(Error((input.as_ref(), IsNot)))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_or_escaped_char_after_taking_as_much_as_possible() {
+            for stop_sequence in vec![r"\", r"\%", r"\:", ":"] {
+                for valid_input in opts_parser_valid_input_examples!() {
+                    let expected_rest = stop_sequence.to_string() + valid_input;
+                    let input_with_stop_sequence = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        opts_chunk_parser(&input_with_stop_sequence),
+                        Ok((expected_rest.as_ref(), valid_input))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn prefer_escaped_percent_to_backslash() {
+            assert_eq!(opts_chunk_parser(r"\\%"), Ok((r"\%", r"\")));
+            assert_eq!(opts_chunk_parser(r"\%\"), Ok((r"\", r"\%")));
+        }
+
+        #[test]
+        fn prefer_escaped_colon_to_backslash() {
+            assert_eq!(opts_chunk_parser(r"\\:"), Ok((r"\:", r"\")));
+            assert_eq!(opts_chunk_parser(r"\:\"), Ok((r"\", ":")));
+        }
+
+        #[test]
+        fn realistic_examples() {
+            assert_eq!(
+                opts_chunk_parser("equation: foo"),
+                Ok((": foo", "equation"))
+            );
+            assert_eq!(
+                opts_chunk_parser(r"\: foo"),
+                Ok((" foo", ":"))
+            );
+            assert_eq!(
+                opts_chunk_parser(r"\% equation : foo"),
+                Ok((" equation : foo", r"\%"))
+            );
+            assert_eq!(
+                opts_chunk_parser("equation* : foo"),
+                Ok((": foo", "equation* "))
+            );
+            assert_eq!(
+                opts_chunk_parser(r"$\mathcal{H}_2$"),
+                Ok((r"\mathcal{H}_2$", "$"))
+            );
+            assert_eq!(
+                opts_chunk_parser(r"\textbf{\texttt{$\frac{1}{2}$}}"),
+                Ok((r"textbf{\texttt{$\frac{1}{2}$}}", r"\"))
+            );
+        }
+    }
+
+    #[cfg(test)]
+    mod opts_parser_tests {
+        use super::super::opts_parser;
+
+        #[test]
+        fn should_take_whole_input() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                assert_eq!(opts_parser(valid_input), Ok(("", valid_input.to_string())));
+            }
+        }
+
+        #[test]
+        fn should_take_whole_input_and_replace_escaped_colons() {
+            for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                assert_eq!(opts_parser(valid_input), Ok(("", valid_input.replace(r"\:", ":"))));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            for terminator in ":%".chars() {
+             for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                let input = terminator.to_string() + valid_input;
+                assert_eq!(opts_parser(&input), Ok((input.as_ref(), "".to_string())));
+            }}
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
+            for terminator in ":%".chars() {
+            for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                let expected_rest = terminator.to_string() + valid_input.as_ref();
+                let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                assert_eq!(
+                    opts_parser(&input_with_terminator),
+                    Ok((expected_rest.as_ref(), valid_input.replace(r"\:", ":")))
+                );
+            }}
+        }
+
+        #[test]
+        fn opts_parser_() {
             assert_eq!(opts_parser("abc"), Ok(("", "abc".to_string())));
             assert_eq!(opts_parser(r"abc\:"), Ok(("", "abc:".to_string())));
             assert_eq!(opts_parser(r"\:abc"), Ok(("", ":abc".to_string())));
@@ -539,41 +738,203 @@ mod tests {
         }
     }
 
-    #[cfg(test)]
-    mod args_parser_tests {
-        #[test]
-        fn args_chunk_parser() {
-            use super::super::args_chunk_parser;
-            use nom::error::ErrorKind::IsNot;
-            use nom::Err::Error;
+    macro_rules! args_parser_valid_input_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                "!!",
+                "@@:",
+                "##",
+                "&&",
+                "==",
+                "-:;-",
+                "__",
+                "//",
+                ";;",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
 
-            assert_eq!(args_chunk_parser(r"abc"), Ok(("", "abc")));
-            assert_eq!(args_chunk_parser(r"\:abc"), Ok((":abc", r"\")));
-            assert_eq!(args_chunk_parser(r"\%abc"), Ok(("abc", r"\%")));
-            assert_eq!(args_chunk_parser(r"(abc"), Ok(("", "(abc")));
-            assert_eq!(args_chunk_parser(r"[abc"), Ok(("", "[abc")));
-            assert_eq!(args_chunk_parser(r"\abc"), Ok(("abc", r"\")));
-            assert_eq!(args_chunk_parser(r" abc"), Ok(("", " abc")));
-            assert_eq!(args_chunk_parser(""), Err(Error(("", IsNot))));
-            assert_eq!(args_chunk_parser("%E"), Err(Error(("%E", IsNot))));
+    macro_rules! args_parser_valid_input_with_escaped_chars_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                r"\!!",
+                r"@@\:",
+                r"\\##",
+                r"&\%&",
+                r"=\\\\\=",
+                r"-\:\;-",
+                r"\%__",
+                r"//\%",
+                r";;\%",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
+
+    #[cfg(test)]
+    mod args_chunk_parser_spec {
+        use super::super::args_chunk_parser;
+
+        #[test]
+        fn should_take_whole_input() {
+            for input in args_parser_valid_input_examples!() {
+                assert_eq!(args_chunk_parser(input), Ok(("", input)));
+            }
         }
 
         #[test]
-        fn args_parser() {
-            use super::super::args_parser;
+        fn should_take_only_the_escaped_percent_at_the_beginning() {
+            for valid_input in args_parser_valid_input_examples!() {
+                let input = r"\%".to_string() + valid_input;
+                assert_eq!(args_chunk_parser(&input), Ok((valid_input, r"\%")));
+            }
+        }
 
-            assert_eq!(args_parser("abc"), Ok(("", "abc".to_string())));
-            assert_eq!(args_parser(r"abc\:"), Ok(("", r"abc\:".to_string())));
-            assert_eq!(args_parser(r"\:abc"), Ok(("", r"\:abc".to_string())));
-            assert_eq!(args_parser("abc def"), Ok(("", "abc def".to_string())));
-            assert_eq!(args_parser(r"abc\:def"), Ok(("", r"abc\:def".to_string())));
-            assert_eq!(args_parser(r"abc\:\\"), Ok(("", r"abc\:\\".to_string())));
-            assert_eq!(args_parser(r"\"), Ok(("", r"\".to_string())));
-            assert_eq!(args_parser(r"\\"), Ok(("", r"\\".to_string())));
-            assert_eq!(args_parser(r"\\\"), Ok(("", r"\\\".to_string())));
-            assert_eq!(args_parser(r"\\:\"), Ok(("", r"\\:\".to_string())));
-            assert_eq!(args_parser(" "), Ok(("", " ".to_string())));
-            assert_eq!(args_parser(""), Ok(("", "".to_string())));
+        #[test]
+        fn should_take_only_the_backslash_at_the_beginning() {
+            for valid_input in args_parser_valid_input_examples!() {
+                let input = r"\".to_string() + valid_input;
+                assert_eq!(args_chunk_parser(&input), Ok((valid_input, r"\")));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            use nom::error::ErrorKind::IsNot;
+            use nom::Err::Error;
+
+            for valid_input in args_parser_valid_input_examples!() {
+                let input = "%".to_string() + valid_input;
+                assert_eq!(
+                    args_chunk_parser(&input),
+                    Err(Error((input.as_ref(), IsNot)))
+                );
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_or_escaped_char_after_taking_as_much_as_possible() {
+            for stop_sequence in vec!["%", r"\", r"\%"] {
+                for valid_input in args_parser_valid_input_examples!() {
+                    let expected_rest = stop_sequence.to_string() + valid_input;
+                    let input_with_stop_sequence = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        args_chunk_parser(&input_with_stop_sequence),
+                        Ok((expected_rest.as_ref(), valid_input))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn prefer_escaped_percent_to_backslash() {
+            assert_eq!(args_chunk_parser(r"\\%"), Ok((r"\%", r"\")));
+            assert_eq!(args_chunk_parser(r"\%\"), Ok((r"\", r"\%")));
+        }
+
+        #[test]
+        fn realistic_examples() {
+            assert_eq!(
+                args_chunk_parser("equation: foo"),
+                Ok(("", "equation: foo"))
+            );
+            assert_eq!(
+                args_chunk_parser(r"\% equation : foo"),
+                Ok((" equation : foo", r"\%"))
+            );
+            assert_eq!(
+                args_chunk_parser("equation* : foo"),
+                Ok(("", "equation* : foo"))
+            );
+            assert_eq!(
+                args_chunk_parser(r"$\mathcal{H}_2$"),
+                Ok((r"\mathcal{H}_2$", "$"))
+            );
+            assert_eq!(
+                args_chunk_parser(r"\textbf{\texttt{$\frac{1}{2}$}}"),
+                Ok((r"textbf{\texttt{$\frac{1}{2}$}}", r"\"))
+            );
+        }
+    }
+
+    #[cfg(test)]
+    mod args_parser_spec {
+        use super::super::args_parser;
+
+        #[test]
+        fn should_take_whole_input() {
+            for valid_input in args_parser_valid_input_with_escaped_chars_examples!() {
+                assert_eq!(args_parser(valid_input), Ok(("", valid_input.to_string())));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            for valid_input in args_parser_valid_input_with_escaped_chars_examples!() {
+                let input = "%".to_string() + valid_input;
+                assert_eq!(args_parser(&input), Ok((input.as_ref(), "".to_string())));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
+            for valid_input in args_parser_valid_input_with_escaped_chars_examples!() {
+                let expected_rest = "%".to_string() + valid_input;
+                let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                assert_eq!(
+                    args_parser(&input_with_terminator),
+                    Ok((expected_rest.as_ref(), valid_input.to_string()))
+                );
+            }
+        }
+
+        #[test]
+        fn realistic_examples() {
             assert_eq!(
                 args_parser("equation: foo"),
                 Ok((r"", "equation: foo".to_string()))
@@ -598,13 +959,23 @@ mod tests {
                 args_parser(r"equation {bar\: qux}: foo"),
                 Ok((r"", r"equation {bar\: qux}: foo".to_string()))
             );
-
-            assert_eq!(args_parser("%E"), Ok(("%E", "".to_string())));
+            assert_eq!(
+                args_parser(r"\% equation : foo"),
+                Ok(("", r"\% equation : foo".to_string()))
+            );
+            assert_eq!(
+                args_parser(r"$\mathcal{H}_2$"),
+                Ok(("", r"$\mathcal{H}_2$".to_string()))
+            );
+            assert_eq!(
+                args_parser(r"\textbf{\texttt{$\frac{1}{2}$}}"),
+                Ok(("", r"\textbf{\texttt{$\frac{1}{2}$}}".to_string()))
+            );
         }
     }
 
     #[cfg(test)]
-    mod tests {
+    mod other_tests {
         #[test]
         fn hashline_helper_plain_lines() {
             use super::super::{hashline_helper, Hashline};
