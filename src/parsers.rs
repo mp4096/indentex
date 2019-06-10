@@ -124,18 +124,13 @@ fn process_itemline<T: AsRef<str>>(line: T) -> Option<Hashline> {
 }
 
 // Fully process line
-pub fn process_line<T>(line: T, list_like_active: bool) -> Hashline
-where
-    T: AsRef<str>,
-{
+pub fn process_line(line: String, list_like_active: bool) -> Hashline {
     use self::Hashline::PlainLine;
 
     match (hashline_parser(line.as_ref()), list_like_active) {
         (Ok((_, r)), _) => r.into(),
-        (_, true) => {
-            process_itemline(&line).unwrap_or_else(|| PlainLine(line.as_ref().to_string()))
-        }
-        (_, false) => PlainLine(line.as_ref().to_string()),
+        (_, true) => process_itemline(&line).unwrap_or_else(|| PlainLine(line)),
+        (_, false) => PlainLine(line),
     }
 }
 
