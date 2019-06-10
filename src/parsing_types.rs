@@ -1,11 +1,11 @@
 use crate::parsers::list_env_parser;
 
 pub struct RawHashlineParseData {
-    pub indent_depth: usize,
-    pub name: String,
-    pub opts: String,
-    pub args: String,
-    pub comment: String,
+    indent_depth: usize,
+    name: String,
+    opts: String,
+    args: String,
+    comment: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -16,13 +16,30 @@ pub enum Hashline {
 
 #[derive(Debug, PartialEq)]
 pub struct Environment {
-    pub indent_depth: usize,
-    pub name: String,
-    pub opts: String,
-    pub comment: String,
-    pub is_list_like: bool,
+    indent_depth: usize,
+    name: String,
+    opts: String,
+    comment: String,
+    is_list_like: bool,
 }
 
+impl RawHashlineParseData {
+    pub fn new(
+        indent_depth: usize,
+        name: String,
+        opts: String,
+        args: String,
+        comment: String,
+    ) -> Self {
+        RawHashlineParseData {
+            indent_depth,
+            name,
+            opts,
+            args,
+            comment,
+        }
+    }
+}
 
 impl From<RawHashlineParseData> for Hashline {
     fn from(raw_hashline: RawHashlineParseData) -> Self {

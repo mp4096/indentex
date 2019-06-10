@@ -93,13 +93,13 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
 
     Ok((
         input,
-        RawHashlineParseData {
-            indent_depth: indentation.map_or(0, |s| s.len()),
-            name: name,
-            opts: opts,
-            args: args,
-            comment: comment.to_string(),
-        },
+        RawHashlineParseData::new(
+            indentation.map_or(0, |s| s.len()),
+            name,
+            opts,
+            args,
+            comment.to_string(),
+        ),
     ))
 }
 
