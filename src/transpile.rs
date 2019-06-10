@@ -52,8 +52,8 @@ fn scan_indents<T: AsRef<str>>(lines: &[T]) -> Vec<usize> {
 // Transpilation
 fn transpile<T: AsRef<str>>(lines: &[T], options: &TranspileOptions) -> String {
     use crate::parsers::process_line;
-    use crate::parsers::Environment;
-    use crate::parsers::Hashline::{OpenEnv, PlainLine};
+    use crate::parsing_types::Environment;
+    use crate::parsing_types::Hashline::{OpenEnv, PlainLine};
 
     // The number of environments is not known beforehand
     let mut env_stack: Vec<Environment> = Vec::new();

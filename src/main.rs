@@ -1,6 +1,7 @@
 mod error;
 mod file_utils;
 mod parsers;
+mod parsing_types;
 mod transpile;
 
 enum ReturnCode {
