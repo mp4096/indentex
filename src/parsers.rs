@@ -92,15 +92,6 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
     ))
 }
 
-// Hashline processing
-#[inline]
-fn process_hashline<T: AsRef<str>>(line: T) -> Option<Hashline> {
-    match hashline_parser(line.as_ref()) {
-        Ok((_, r)) => Some(r.into()),
-        Err(_) => None,
-    }
-}
-
 // Itemline parsers
 fn itemline_parser(input: &str) -> nom::IResult<&str, Hashline> {
     use self::Hashline::PlainLine;
@@ -139,12 +130,12 @@ where
 {
     use self::Hashline::PlainLine;
 
-    match (process_hashline(&line), list_like_active) {
-        (Some(r), _) => r,
-        (None, true) => {
+    match (hashline_parser(line.as_ref()), list_like_active) {
+        (Ok((_, r)), _) => r.into(),
+        (_, true) => {
             process_itemline(&line).unwrap_or_else(|| PlainLine(line.as_ref().to_string()))
         }
-        (None, false) => PlainLine(line.as_ref().to_string()),
+        (_, false) => PlainLine(line.as_ref().to_string()),
     }
 }
 
