@@ -20,7 +20,7 @@ which can be used further in your toolchain, sent to a publisher or your colleag
 ## Installation
 
 ### From source
-Please install the latest stable Rust version (≥ 1.30).
+Indentex requires Rust 2018 edition. Please install the latest stable Rust version (≥ 1.31.1).
 
 ```sh
 cargo install --git https://github.com/mp4096/indentex/
@@ -30,8 +30,8 @@ cargo install --git https://github.com/mp4096/indentex/
 Type `indentex -h` for help:
 
 ```
-indentex 0.4.0
-Mikhail Pak <mikhail.pak@tum.de>:Hans Kirchner <h.kirchner@tum.de>
+indentex 0.5.0-beta
+Mikhail Pak <code@mp4096.com>:Hans Kirchner <h.kirchner@tum.de>
 Transpiler for an indentation-based superset of LaTeX
 
 USAGE:

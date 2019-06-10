@@ -50,33 +50,33 @@ fn scan_indents<T: AsRef<str>>(lines: &[T]) -> Vec<usize> {
 }
 
 // Transpilation
-fn transpile<T: AsRef<str>>(lines: &[T], options: &TranspileOptions) -> String {
+fn transpile(mut lines: Vec<String>, options: &TranspileOptions) -> String {
     use crate::parsers::process_line;
-    use crate::parsers::Environment;
-    use crate::parsers::Hashline::{OpenEnv, PlainLine};
+    use crate::parsing_types::Environment;
+    use crate::parsing_types::Hashline::{OpenEnv, PlainLine};
 
     // The number of environments is not known beforehand
     let mut env_stack: Vec<Environment> = Vec::new();
 
     // Input size is the sum of all line lengths plus the number of lines (for lineseps)
-    let input_size = lines.iter().fold(0, |sum, l| sum + l.as_ref().len()) + lines.len();
+    let input_size = lines.iter().fold(0, |sum, l| sum + l.len()) + lines.len();
     // We do not know how much larger the transpiled LaTeX file will be, but we can guess...
     let indentex_size = (LATEX_TO_INDENTEX_FACTOR * (input_size as f64)).round() as usize;
     let mut transpiled = String::with_capacity(indentex_size);
 
-    let adjusted_indents = scan_indents(lines);
+    let adjusted_indents = scan_indents(lines.as_ref());
 
     if options.prepend_do_not_edit_notice {
         transpiled.push_str(DO_NOT_EDIT_NOTICE);
     }
 
-    for (line_num, line) in lines.iter().enumerate() {
+    for (line_num, line) in lines.drain(..).enumerate() {
         let list_like_active = match env_stack.last() {
             None => false, // No environment is active at all
             Some(d) => d.is_list_like(),
         };
 
-        let tl = match process_line(line.as_ref(), list_like_active) {
+        let tl = match process_line(line, list_like_active) {
             PlainLine(l) => l,
             OpenEnv(e) => {
                 let tag_begin = e.latex_begin();
@@ -117,7 +117,7 @@ pub fn transpile_file<T: AsRef<Path>>(
     use crate::file_utils::{read_and_trim_lines, rename_indentex_file, write_to_file};
 
     let lines = read_and_trim_lines(path.as_ref())?;
-    let transpiled_text = transpile(&lines, options);
+    let transpiled_text = transpile(lines, options);
     let path_out = rename_indentex_file(path)?;
     write_to_file(path_out, &transpiled_text)?;
 

@@ -1,503 +1,1264 @@
-#[derive(Debug, PartialEq)]
-pub enum Hashline {
-    OpenEnv(Environment),
-    PlainLine(String),
+use crate::parsing_types::{Hashline, RawHashlineParseData, RawItemlineParseData};
+
+#[inline]
+fn escaped_colon(input: &str) -> nom::IResult<&str, &str> {
+    use nom::bytes::complete::tag;
+    use nom::sequence::preceded;
+
+    preceded(tag(r"\"), tag(":"))(input)
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Environment {
-    indent_depth: usize,
-    name: String,
-    opts: String,
-    comment: String,
-    is_list_like: bool,
+#[inline]
+fn name_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
+    use nom::branch::alt;
+    use nom::bytes::complete::is_not;
+
+    alt((escaped_colon, is_not("\\:%([{ \t")))(input)
 }
 
-impl Environment {
-    pub fn latex_begin(&self) -> String {
-        format!(
-            r"{dummy:ind$}\begin{{{name}}}{opts}{comment_sep}{comment}",
-            name = self.name,
-            opts = self.opts,
-            comment = self.comment,
-            dummy = "",
-            ind = self.indent_depth,
-            comment_sep = if self.comment.is_empty() { "" } else { " " }
-        )
-    }
-
-    pub fn latex_end(&self) -> String {
-        format!(
-            r"{dummy:ind$}\end{{{name}}}",
-            name = self.name,
-            dummy = "",
-            ind = self.indent_depth
-        )
-    }
-
-    pub fn indent_depth(&self) -> usize {
-        self.indent_depth
-    }
-
-    pub fn is_list_like(&self) -> bool {
-        self.is_list_like
-    }
+#[inline]
+fn name_parser(input: &str) -> nom::IResult<&str, String> {
+    nom::multi::fold_many1(
+        name_chunk_parser,
+        String::with_capacity(input.len()),
+        |mut acc: String, item| {
+            acc.push_str(item);
+            acc
+        },
+    )(input)
 }
 
-// Hashline parsers
-named!(
-    list_env_parser<&[u8]>,
-    ws!(alt!(
-        tag!("itemize") | tag!("enumerate") | tag!("description")
+#[inline]
+fn opts_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
+    use nom::branch::alt;
+    use nom::bytes::complete::{is_not, tag};
+
+    alt((escaped_colon, tag(r"\%"), tag(r"\"), is_not(r"\:%")))(input)
+}
+
+#[inline]
+fn opts_parser(input: &str) -> nom::IResult<&str, String> {
+    nom::multi::fold_many0(
+        opts_chunk_parser,
+        String::with_capacity(input.len()),
+        |mut acc: String, item| {
+            acc.push_str(item);
+            acc
+        },
+    )(input)
+}
+
+#[inline]
+fn args_chunk_parser(input: &str) -> nom::IResult<&str, &str> {
+    use nom::branch::alt;
+    use nom::bytes::complete::{is_not, tag};
+
+    alt((tag(r"\%"), tag(r"\"), is_not(r"\%")))(input)
+}
+
+#[inline]
+fn args_parser(input: &str) -> nom::IResult<&str, String> {
+    nom::multi::fold_many0(
+        args_chunk_parser,
+        String::with_capacity(input.len()),
+        |mut acc: String, item| {
+            acc.push_str(item);
+            acc
+        },
+    )(input)
+}
+
+fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
+    use nom::bytes::complete::{is_a, tag};
+    use nom::combinator::{opt, rest};
+
+    let (input, indentation) = opt(is_a(" "))(input)?;
+    let (input, _) = tag("# ")(input)?;
+    let (input, name) = name_parser(input)?;
+    let (input, opts) = opts_parser(input)?;
+    let (input, _) = tag(":")(input)?;
+    let (input, args) = args_parser(input)?;
+    let (input, comment) = rest(input)?;
+
+    Ok((
+        input,
+        RawHashlineParseData::new(
+            indentation.map_or(0, |s| s.len()),
+            name.trim().to_string(),    // FIXME: Avoid copying here
+            opts.trim().to_string(),    // FIXME: Avoid copying here
+            args.trim().to_string(),    // FIXME: Avoid copying here
+            comment.trim().to_string(), // FIXME: Avoid copying here
+        ),
     ))
-);
-named!(
-    escaped_colon<u8>,
-    preceded!(specific_byte!(b'\\'), specific_byte!(b':'))
-);
-named!(
-    escaped_percent<u8>,
-    preceded!(specific_byte!(b'\\'), specific_byte!(b'%'))
-);
-named!(
-    name_parser<u8>,
-    alt!(escaped_colon | none_of_bytes_as_bytes!(b":%([{ \t"))
-);
-named!(
-    opts_parser<u8>,
-    alt!(escaped_colon | escaped_percent | none_of_bytes_as_bytes!(b":%"))
-);
-named!(
-    args_parser<u8>,
-    alt!(escaped_percent | none_of_bytes_as_bytes!(b"%"))
-);
-#[rustfmt::skip]
-named!(
-    hashline_parser<Hashline>,
-    do_parse!(
-        ws: opt!(is_a!(" ")) >>
-        tag!("# ") >>
-        name: many1!(name_parser) >>
-        opts: many0!(opts_parser) >>
-        tag!(":") >>
-        args: many0!(args_parser) >>
-        comment: call!(nom::rest) >>
-        (hashline_helper(ws.unwrap_or(&b""[..]), &name, &opts, &args, comment))
-    )
-);
-#[inline]
-fn hashline_helper(ws: &[u8], name: &[u8], opts: &[u8], args: &[u8], comment: &[u8]) -> Hashline {
-    use self::Hashline::{OpenEnv, PlainLine};
-    use std::str::from_utf8;
-
-    // It is ok to unwrap here, since we have checked for UTF-8 when we read the file
-    let name_utf8 = from_utf8(name).unwrap().trim();
-    let opts_utf8 = from_utf8(opts).unwrap().trim().replace("%", r"\%");
-    let args_utf8 = from_utf8(args).unwrap().trim().replace("%", r"\%");
-    let comment_utf8 = from_utf8(comment).unwrap().trim();
-
-    if args_utf8.is_empty() {
-        // If no args are given, it's an environment
-        let env = Environment {
-            indent_depth: ws.len(),
-            name: name_utf8.to_string(),
-            opts: opts_utf8.to_string(),
-            comment: comment_utf8.to_string(),
-            is_list_like: list_env_parser(name).is_done(),
-        };
-        OpenEnv(env)
-    } else {
-        // If there are some args, it's a single-line command
-        let ws_utf8 = from_utf8(ws).unwrap();
-        PlainLine(format!(
-            r"{indent}\{name}{opts}{{{args}}}{comment_sep}{comment}",
-            indent = ws_utf8,
-            name = name_utf8,
-            opts = opts_utf8,
-            args = args_utf8,
-            comment_sep = if comment_utf8.is_empty() { "" } else { " " },
-            comment = comment_utf8
-        ))
-    }
-}
-
-// Hashline processing
-#[inline]
-fn process_hashline<T: AsRef<str>>(line: T) -> Option<Hashline> {
-    use nom::IResult::{Done, Error, Incomplete};
-
-    match hashline_parser(line.as_ref().as_bytes()) {
-        Done(_, r) => Some(r),
-        Error(_) | Incomplete(_) => None,
-    }
 }
 
 // Itemline parsers
-#[rustfmt::skip]
-named!(
-    itemline_parser<Hashline>,
-    do_parse!(
-        ws: opt!(is_a!(" ")) >>
-        tag!("*") >>
-        item: call!(nom::rest) >>
-        (itemline_helper(ws.unwrap_or(&b""[..]), item))
-    )
-);
-#[inline]
-fn itemline_helper(ws: &[u8], item: &[u8]) -> Hashline {
-    use self::Hashline::PlainLine;
-    use std::str::from_utf8;
+fn itemline_parser(input: &str) -> nom::IResult<&str, RawItemlineParseData> {
+    use nom::bytes::complete::{is_a, tag};
+    use nom::combinator::{opt, rest};
 
-    let ws_utf8 = from_utf8(ws).unwrap();
-    let item_utf8 = from_utf8(item).unwrap().trim();
+    let (input, indentation) = opt(is_a(" "))(input)?;
+    let (input, _) = tag("*")(input)?;
+    let (input, item) = rest(input)?;
 
-    PlainLine(format!(
-        r"{indent}\item{item_sep}{content}",
-        indent = ws_utf8,
-        content = item_utf8,
-        item_sep = if item_utf8.is_empty() { "" } else { " " }
+    Ok((
+        input,
+        RawItemlineParseData::new(indentation.map_or(0, |s| s.len()), item.trim().to_string()),
     ))
 }
 
 // Itemline processing
 #[inline]
-fn process_itemline<T: AsRef<str>>(line: T) -> Option<Hashline> {
-    use nom::IResult::{Done, Error, Incomplete};
+fn process_itemline(line: String) -> Hashline {
+    use self::Hashline::PlainLine;
 
-    match itemline_parser(line.as_ref().as_bytes()) {
-        Done(_, r) => Some(r),
-        Error(_) | Incomplete(_) => None,
+    match itemline_parser(line.as_ref()) {
+        Ok((_, r)) => r.into(),
+        Err(_) => PlainLine(line),
     }
 }
 
 // Fully process line
-pub fn process_line<T>(line: T, list_like_active: bool) -> Hashline
-where
-    T: AsRef<str>,
-{
+pub fn process_line(line: String, list_like_active: bool) -> Hashline {
     use self::Hashline::PlainLine;
 
-    match (process_hashline(&line), list_like_active) {
-        (Some(r), _) => r,
-        (None, true) => {
-            process_itemline(&line).unwrap_or_else(|| PlainLine(line.as_ref().to_string()))
-        }
-        (None, false) => PlainLine(line.as_ref().to_string()),
+    match (hashline_parser(line.as_ref()), list_like_active) {
+        (Ok((_, r)), _) => r.into(),
+        (_, true) => process_itemline(line),
+        (_, false) => PlainLine(line),
     }
 }
 
 // LCOV_EXCL_START
 #[cfg(test)]
 mod tests {
-    use nom::IResult::{Done, Error, Incomplete};
-    use nom::{ErrorKind, Needed};
+    #[cfg(test)]
+    mod helper_parser_tests {
+        #[test]
+        fn escaped_colon() {
+            use super::super::escaped_colon;
+            use nom::error::ErrorKind::Tag;
+            use nom::Err::Error;
 
-    macro_rules! nil {
+            assert_eq!(escaped_colon(r"\:"), Ok(("", ":")));
+            assert_eq!(escaped_colon(r"\"), Err(Error((r"", Tag))));
+            assert_eq!(escaped_colon(r":\"), Err(Error((r":\", Tag))));
+            assert_eq!(escaped_colon(r"\\"), Err(Error((r"\", Tag))));
+            assert_eq!(escaped_colon(r"\a"), Err(Error((r"a", Tag))));
+            assert_eq!(escaped_colon(r"\;"), Err(Error((r";", Tag))));
+            assert_eq!(escaped_colon(""), Err(Error(("", Tag))));
+            assert_eq!(escaped_colon("ab"), Err(Error(("ab", Tag))));
+        }
+    }
+
+    macro_rules! name_parser_valid_input_examples {
         () => {
-            "".as_bytes()
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                "!!",
+                "@@",
+                "##",
+                "&&",
+                "==",
+                "--",
+                "__",
+                "//",
+                ";;",
+                ",,",
+                "..",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "section",
+                "section*",
+                "equation*",
+            ]
         };
     }
-    macro_rules! ws_1 {
+
+    macro_rules! name_parser_valid_input_with_escaped_colons_examples {
         () => {
-            " ".as_bytes()
-        };
-    }
-    macro_rules! ws_2 {
-        () => {
-            "  ".as_bytes()
-        };
-    }
-    macro_rules! ws_4 {
-        () => {
-            "    ".as_bytes()
-        };
-    }
-
-    macro_rules! foo {
-        () => {
-            "foo".as_bytes()
-        };
-    }
-    macro_rules! bar {
-        () => {
-            "bar".as_bytes()
-        };
-    }
-    macro_rules! qux {
-        () => {
-            "qux".as_bytes()
-        };
-    }
-    macro_rules! itemize {
-        () => {
-            "itemize".as_bytes()
+            vec![
+                r"\:abc\:",
+                r"äü\:ß\:",
+                r"а\:б\:в",
+                r"!!\:",
+                r"@\:@",
+                r"\:#\:#",
+                r"&\:&",
+                r"\:==\:",
+                r"-\:-\:",
+                r"_\:_",
+                r"\:/\:/",
+                r";\:\:;",
+                r",\:,\:",
+                r".\:.\:",
+                r"*\:*",
+                r"\:|\:|",
+                r"\:?\:?\:",
+                "\"\\:\\:\"",
+                r"\:'\:'",
+                r"\:sec\:tion",
+                r"section\:*\:",
+                r"\:equation\:*",
+                r"\:\:\:\:",
+            ]
         };
     }
 
-    #[test]
-    fn hashline_helper_plain_lines() {
-        use super::{hashline_helper, Hashline};
+    #[cfg(test)]
+    mod name_chunk_parser_spec {
+        use super::super::name_chunk_parser;
 
-        assert_eq!(
-            hashline_helper(nil!(), foo!(), nil!(), bar!(), nil!()),
-            Hashline::PlainLine("\\foo{bar}".to_string())
-        );
-        assert_eq!(
-            hashline_helper(ws_2!(), foo!(), nil!(), bar!(), qux!()),
-            Hashline::PlainLine("  \\foo{bar} qux".to_string())
-        );
-        assert_eq!(
-            hashline_helper(ws_4!(), foo!(), bar!(), qux!(), nil!()),
-            Hashline::PlainLine("    \\foobar{qux}".to_string())
-        );
-    }
+        #[test]
+        fn should_take_whole_input() {
+            for input in name_parser_valid_input_examples!() {
+                assert_eq!(name_chunk_parser(input), Ok(("", input)));
+            }
+        }
 
-    #[test]
-    fn hashline_helper_environments() {
-        use super::{hashline_helper, Environment, Hashline};
+        #[test]
+        fn should_take_only_the_escaped_colon_at_the_beginning() {
+            for valid_input in name_parser_valid_input_examples!() {
+                let input = r"\:".to_string() + valid_input;
+                assert_eq!(name_chunk_parser(&input), Ok((valid_input, ":")));
+            }
+        }
 
-        let env_ref_1 = Environment {
-            indent_depth: 0,
-            name: "foo".to_string(),
-            opts: "bar".to_string(),
-            comment: "".to_string(),
-            is_list_like: false,
-        };
-        assert_eq!(
-            hashline_helper(nil!(), foo!(), bar!(), nil!(), nil!()),
-            Hashline::OpenEnv(env_ref_1)
-        );
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            use nom::error::ErrorKind::IsNot;
+            use nom::Err::Error;
 
-        let env_ref_2 = Environment {
-            indent_depth: 2,
-            name: "foo".to_string(),
-            opts: "".to_string(),
-            comment: "bar".to_string(),
-            is_list_like: false,
-        };
-        assert_eq!(
-            hashline_helper(ws_2!(), foo!(), nil!(), nil!(), bar!()),
-            Hashline::OpenEnv(env_ref_2)
-        );
+            for terminator in " :%([{\t\\".chars() {
+                for valid_input in name_parser_valid_input_examples!() {
+                    let input = terminator.to_string() + valid_input;
+                    assert_eq!(
+                        name_chunk_parser(&input),
+                        Err(Error((input.as_ref(), IsNot)))
+                    );
+                }
+            }
+        }
 
-        let env_ref_3 = Environment {
-            indent_depth: 4,
-            name: "foo".to_string(),
-            opts: "bar".to_string(),
-            comment: "qux".to_string(),
-            is_list_like: false,
-        };
-        assert_eq!(
-            hashline_helper(ws_4!(), foo!(), bar!(), nil!(), qux!()),
-            Hashline::OpenEnv(env_ref_3)
-        );
+        #[test]
+        fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
+            for terminator in " :%([{\t\\".chars() {
+                for valid_input in name_parser_valid_input_examples!() {
+                    let expected_rest = terminator.to_string() + valid_input;
+                    let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        name_chunk_parser(&input_with_terminator),
+                        Ok((expected_rest.as_ref(), valid_input))
+                    );
+                }
+            }
+        }
 
-        let env_ref_4 = Environment {
-            indent_depth: 0,
-            name: "itemize".to_string(),
-            opts: "bar".to_string(),
-            comment: "qux".to_string(),
-            is_list_like: true,
-        };
-        assert_eq!(
-            hashline_helper(nil!(), itemize!(), bar!(), nil!(), qux!()),
-            Hashline::OpenEnv(env_ref_4)
-        );
-    }
+        #[test]
+        fn should_stop_at_an_escaped_colon_after_taking_as_much_as_possible() {
+            for valid_input in name_parser_valid_input_examples!() {
+                let expected_rest = r"\:".to_string() + valid_input;
+                let input_with_escaped_colon = valid_input.to_string() + expected_rest.as_ref();
+                assert_eq!(
+                    name_chunk_parser(&input_with_escaped_colon),
+                    Ok((expected_rest.as_ref(), valid_input))
+                );
+            }
+        }
 
-    #[test]
-    fn itemline_helper() {
-        use super::{itemline_helper, Hashline};
-
-        assert_eq!(
-            itemline_helper(ws_2!(), foo!()),
-            Hashline::PlainLine("  \\item foo".to_string())
-        );
-        // Test that no whitespace is put after `\item` if no item is given
-        assert_eq!(
-            itemline_helper(ws_1!(), nil!()),
-            Hashline::PlainLine(" \\item".to_string())
-        );
-    }
-
-    #[test]
-    fn process_itemline() {
-        use super::{process_itemline, Hashline};
-
-        // Valid itemlines
-        assert_eq!(
-            process_itemline("*"),
-            Some(Hashline::PlainLine("\\item".to_string()))
-        );
-        assert_eq!(
-            process_itemline("*  "),
-            Some(Hashline::PlainLine("\\item".to_string()))
-        );
-        assert_eq!(
-            process_itemline("  *"),
-            Some(Hashline::PlainLine("  \\item".to_string()))
-        );
-        assert_eq!(
-            process_itemline("  *  "),
-            Some(Hashline::PlainLine("  \\item".to_string()))
-        );
-        assert_eq!(
-            process_itemline("* foo"),
-            Some(Hashline::PlainLine("\\item foo".to_string()))
-        );
-        assert_eq!(
-            process_itemline("  * bar"),
-            Some(Hashline::PlainLine("  \\item bar".to_string()))
-        );
-        assert_eq!(
-            process_itemline("****"),
-            Some(Hashline::PlainLine("\\item ***".to_string()))
-        );
-
-        // Not an itemline
-        assert_eq!(process_itemline("  baz"), None);
-        assert_eq!(process_itemline("qux *"), None);
-        assert_eq!(process_itemline("  abc * def"), None);
-        assert_eq!(process_itemline("  \\*  "), None);
-        assert_eq!(process_itemline("\\*  "), None);
-    }
-
-    #[test]
-    fn environment_methods() {
-        use super::Environment;
-
-        let env_1 = Environment {
-            indent_depth: 0,
-            name: "foo".to_string(),
-            opts: "bar".to_string(),
-            comment: "% baz".to_string(),
-            is_list_like: true,
-        };
-
-        assert_eq!(env_1.latex_begin(), "\\begin{foo}bar % baz");
-        assert_eq!(env_1.latex_end(), "\\end{foo}");
-        assert_eq!(env_1.is_list_like(), true);
-        assert_eq!(env_1.indent_depth(), 0);
-
-        let env_2 = Environment {
-            indent_depth: 2,
-            name: "abc".to_string(),
-            opts: "def".to_string(),
-            comment: "".to_string(),
-            is_list_like: false,
-        };
-
-        assert_eq!(env_2.latex_begin(), "  \\begin{abc}def");
-        assert_eq!(env_2.latex_end(), "  \\end{abc}");
-        assert_eq!(env_2.is_list_like(), false);
-        assert_eq!(env_2.indent_depth(), 2);
-    }
-
-    #[test]
-    fn list_env_parser() {
-        use super::list_env_parser;
-
-        let a = b"itemize";
-        let b = b"enumerate*";
-        let c = b"    description  *";
-        let d = b"item";
-        let e = b"foobar";
-
-        assert_eq!(list_env_parser(&a[..]), Done(&b""[..], &a[..]));
-        assert_eq!(list_env_parser(&b[..]), Done(&b"*"[..], &b"enumerate"[..]));
-        assert_eq!(
-            list_env_parser(&c[..]),
-            Done(&b"*"[..], &b"description"[..])
-        );
-        assert_eq!(list_env_parser(&d[..]), Incomplete(Needed::Size(7)));
-        assert_eq!(
-            list_env_parser(&e[..]),
-            Error(error_position!(ErrorKind::Alt, &e[..]))
-        );
-    }
-
-    #[test]
-    fn escaped_colon() {
-        use super::escaped_colon;
-
-        let a = br"\:";
-        let c = b"ab";
-
-        assert_eq!(escaped_colon(&a[..]), Done(&b""[..], ':' as u8));
-        assert_eq!(escaped_colon(nil!()), Incomplete(Needed::Size(1)));
-        assert_eq!(
-            escaped_colon(&c[..]),
-            Error(error_position!(ErrorKind::Char, &c[..]))
-        );
-    }
-
-    #[test]
-    fn escaped_percent() {
-        use super::escaped_percent;
-
-        let a = br"\%";
-        let c = b"ab";
-
-        assert_eq!(escaped_percent(&a[..]), Done(&b""[..], '%' as u8));
-        assert_eq!(escaped_percent(nil!()), Incomplete(Needed::Size(1)));
-        assert_eq!(
-            escaped_percent(&c[..]),
-            Error(error_position!(ErrorKind::Char, &c[..]))
-        );
-    }
-
-    #[test]
-    fn name_parser() {
-        use super::name_parser;
-
-        assert_eq!(name_parser(&br"abc"[..]), Done(&b"bc"[..], 'a' as u8));
-        assert_eq!(name_parser(&br"\:abc"[..]), Done(&b"abc"[..], ':' as u8));
-        assert_eq!(name_parser(&b""[..]), Incomplete(Needed::Size(1)));
-
-        for e in vec![b":E", b"%E", b"(E", b"[E", b"{E", b" E", b"\tE"] {
+        #[test]
+        fn realistic_examples() {
             assert_eq!(
-                name_parser(&e[..]),
-                Error(error_position!(ErrorKind::Alt, &e[..]))
+                name_chunk_parser("equation: foo"),
+                Ok((": foo", "equation"))
+            );
+            assert_eq!(
+                name_chunk_parser("equation : foo"),
+                Ok((" : foo", "equation"))
+            );
+            assert_eq!(
+                name_chunk_parser("equation* : foo"),
+                Ok((" : foo", "equation*"))
+            );
+            assert_eq!(
+                name_chunk_parser("equation[bar]: foo"),
+                Ok(("[bar]: foo", "equation"))
+            );
+            assert_eq!(
+                name_chunk_parser(r"foo\:bar: qux"),
+                Ok((r"\:bar: qux", "foo"))
             );
         }
     }
 
-    #[test]
-    fn opts_parser() {
-        use super::opts_parser;
+    #[cfg(test)]
+    mod name_parser_spec {
+        use super::super::name_parser;
 
-        assert_eq!(opts_parser(&br"abc"[..]), Done(&b"bc"[..], 'a' as u8));
-        assert_eq!(opts_parser(&br"\:abc"[..]), Done(&b"abc"[..], ':' as u8));
-        assert_eq!(opts_parser(&br"\%abc"[..]), Done(&b"abc"[..], '%' as u8));
-        assert_eq!(opts_parser(&br"(abc"[..]), Done(&b"abc"[..], '(' as u8));
-        assert_eq!(opts_parser(&br"[abc"[..]), Done(&b"abc"[..], '[' as u8));
-        assert_eq!(opts_parser(&br" abc"[..]), Done(&b"abc"[..], ' ' as u8));
-        assert_eq!(opts_parser(&b""[..]), Incomplete(Needed::Size(1)));
+        #[test]
+        fn should_take_whole_input() {
+            for input in name_parser_valid_input_examples!() {
+                assert_eq!(name_parser(input), Ok(("", input.to_string())));
+            }
+        }
 
-        for e in vec![b":E", b"%E"] {
+        #[test]
+        fn should_take_whole_input_and_replace_escaped_colons() {
+            for input in name_parser_valid_input_with_escaped_colons_examples!() {
+                assert_eq!(name_parser(input), Ok(("", input.replace(r"\:", ":"))));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            use nom::error::ErrorKind::Many1;
+            use nom::Err::Error;
+
+            for terminator in " :%([{\t\\".chars() {
+                for valid_input in name_parser_valid_input_examples!() {
+                    let input = terminator.to_string() + valid_input;
+                    assert_eq!(name_parser(&input), Err(Error((input.as_ref(), Many1))));
+                }
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
+            for terminator in " :%([{\t\\".chars() {
+                for valid_input in name_parser_valid_input_with_escaped_colons_examples!() {
+                    let expected_rest = terminator.to_string() + valid_input;
+                    let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        name_parser(&input_with_terminator),
+                        Ok((expected_rest.as_ref(), valid_input.replace(r"\:", ":")))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn realistic_examples() {
             assert_eq!(
-                opts_parser(&e[..]),
-                Error(error_position!(ErrorKind::Alt, &e[..]))
+                name_parser("equation: foo"),
+                Ok((": foo", "equation".to_string()))
+            );
+            assert_eq!(
+                name_parser("equation : foo"),
+                Ok((" : foo", "equation".to_string()))
+            );
+            assert_eq!(
+                name_parser("equation* : foo"),
+                Ok((" : foo", "equation*".to_string()))
+            );
+            assert_eq!(
+                name_parser("equation[bar]: foo"),
+                Ok(("[bar]: foo", "equation".to_string()))
+            );
+            assert_eq!(
+                name_parser(r"foo\:bar: qux"),
+                Ok((": qux", "foo:bar".to_string()))
             );
         }
     }
 
-    #[test]
-    fn args_parser() {
-        use super::args_parser;
+    macro_rules! opts_parser_valid_input_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                "!!",
+                "@@",
+                "##",
+                "&&",
+                "==",
+                "-;-",
+                "__",
+                "//",
+                ";;",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
 
-        assert_eq!(args_parser(&br"abc"[..]), Done(&b"bc"[..], 'a' as u8));
-        assert_eq!(args_parser(&br"\:abc"[..]), Done(&b":abc"[..], '\\' as u8));
-        assert_eq!(args_parser(&br"\%abc"[..]), Done(&b"abc"[..], '%' as u8));
-        assert_eq!(args_parser(&br"(abc"[..]), Done(&b"abc"[..], '(' as u8));
-        assert_eq!(args_parser(&br"[abc"[..]), Done(&b"abc"[..], '[' as u8));
-        assert_eq!(args_parser(&br" abc"[..]), Done(&b"abc"[..], ' ' as u8));
-        assert_eq!(args_parser(&b""[..]), Incomplete(Needed::Size(1)));
+    macro_rules! opts_parser_valid_input_with_escaped_chars_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                r"\!!",
+                r"@@\:",
+                r"\\##",
+                r"&\%&",
+                r"=\\\\\=",
+                r"-\:\;-",
+                r"\%__",
+                r"//\%",
+                r";;\%",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
 
-        assert_eq!(
-            args_parser(&b"%E"[..]),
-            Error(error_position!(ErrorKind::Alt, &b"%E"[..]))
-        );
+    #[cfg(test)]
+    mod opts_chunk_parser_spec {
+        use super::super::opts_chunk_parser;
+
+        #[test]
+        fn should_take_whole_input() {
+            for input in opts_parser_valid_input_examples!() {
+                assert_eq!(opts_chunk_parser(input), Ok(("", input)));
+            }
+        }
+
+        #[test]
+        fn should_take_only_the_escaped_percent_at_the_beginning() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                let input = r"\%".to_string() + valid_input;
+                assert_eq!(opts_chunk_parser(&input), Ok((valid_input, r"\%")));
+            }
+        }
+
+        #[test]
+        fn should_take_only_the_escaped_colon_at_the_beginning() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                let input = r"\:".to_string() + valid_input;
+                assert_eq!(opts_chunk_parser(&input), Ok((valid_input, ":")));
+            }
+        }
+
+        #[test]
+        fn should_take_only_the_backslash_at_the_beginning() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                let input = r"\".to_string() + valid_input;
+                assert_eq!(opts_chunk_parser(&input), Ok((valid_input, r"\")));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            use nom::error::ErrorKind::IsNot;
+            use nom::Err::Error;
+
+            for terminator in "%:".chars() {
+                for valid_input in opts_parser_valid_input_examples!() {
+                    let input = terminator.to_string() + valid_input;
+                    assert_eq!(
+                        opts_chunk_parser(&input),
+                        Err(Error((input.as_ref(), IsNot)))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_or_escaped_char_after_taking_as_much_as_possible() {
+            for stop_sequence in vec![r"\", r"\%", r"\:", ":"] {
+                for valid_input in opts_parser_valid_input_examples!() {
+                    let expected_rest = stop_sequence.to_string() + valid_input;
+                    let input_with_stop_sequence = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        opts_chunk_parser(&input_with_stop_sequence),
+                        Ok((expected_rest.as_ref(), valid_input))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn prefer_escaped_percent_to_backslash() {
+            assert_eq!(opts_chunk_parser(r"\\%"), Ok((r"\%", r"\")));
+            assert_eq!(opts_chunk_parser(r"\%\"), Ok((r"\", r"\%")));
+        }
+
+        #[test]
+        fn prefer_escaped_colon_to_backslash() {
+            assert_eq!(opts_chunk_parser(r"\\:"), Ok((r"\:", r"\")));
+            assert_eq!(opts_chunk_parser(r"\:\"), Ok((r"\", ":")));
+        }
+
+        #[test]
+        fn realistic_examples() {
+            assert_eq!(
+                opts_chunk_parser("equation: foo"),
+                Ok((": foo", "equation"))
+            );
+            assert_eq!(opts_chunk_parser(r"\: foo"), Ok((" foo", ":")));
+            assert_eq!(
+                opts_chunk_parser(r"\% equation : foo"),
+                Ok((" equation : foo", r"\%"))
+            );
+            assert_eq!(
+                opts_chunk_parser("equation* : foo"),
+                Ok((": foo", "equation* "))
+            );
+            assert_eq!(
+                opts_chunk_parser(r"$\mathcal{H}_2$"),
+                Ok((r"\mathcal{H}_2$", "$"))
+            );
+            assert_eq!(
+                opts_chunk_parser(r"\textbf{\texttt{$\frac{1}{2}$}}"),
+                Ok((r"textbf{\texttt{$\frac{1}{2}$}}", r"\"))
+            );
+        }
+    }
+
+    #[cfg(test)]
+    mod opts_parser_tests {
+        use super::super::opts_parser;
+
+        #[test]
+        fn should_take_whole_input() {
+            for valid_input in opts_parser_valid_input_examples!() {
+                assert_eq!(opts_parser(valid_input), Ok(("", valid_input.to_string())));
+            }
+        }
+
+        #[test]
+        fn should_take_whole_input_and_replace_escaped_colons() {
+            for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                assert_eq!(
+                    opts_parser(valid_input),
+                    Ok(("", valid_input.replace(r"\:", ":")))
+                );
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            for terminator in ":%".chars() {
+                for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                    let input = terminator.to_string() + valid_input;
+                    assert_eq!(opts_parser(&input), Ok((input.as_ref(), "".to_string())));
+                }
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
+            for terminator in ":%".chars() {
+                for valid_input in opts_parser_valid_input_with_escaped_chars_examples!() {
+                    let expected_rest = terminator.to_string() + valid_input.as_ref();
+                    let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        opts_parser(&input_with_terminator),
+                        Ok((expected_rest.as_ref(), valid_input.replace(r"\:", ":")))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn opts_parser_() {
+            assert_eq!(opts_parser("abc"), Ok(("", "abc".to_string())));
+            assert_eq!(opts_parser(r"abc\:"), Ok(("", "abc:".to_string())));
+            assert_eq!(opts_parser(r"\:abc"), Ok(("", ":abc".to_string())));
+            assert_eq!(opts_parser("abc def"), Ok(("", "abc def".to_string())));
+            assert_eq!(opts_parser(r"abc\:def"), Ok(("", "abc:def".to_string())));
+            assert_eq!(opts_parser(r"abc\:\\"), Ok(("", r"abc:\\".to_string())));
+            assert_eq!(opts_parser(r"\"), Ok(("", r"\".to_string())));
+            assert_eq!(opts_parser(r"\\"), Ok(("", r"\\".to_string())));
+            assert_eq!(opts_parser(r"\\\"), Ok(("", r"\\\".to_string())));
+            assert_eq!(opts_parser(r"\\:\"), Ok(("", r"\:\".to_string())));
+            assert_eq!(opts_parser(" "), Ok(("", " ".to_string())));
+            assert_eq!(opts_parser(""), Ok(("", "".to_string())));
+            assert_eq!(
+                opts_parser("equation: foo"),
+                Ok((r": foo", "equation".to_string()))
+            );
+            assert_eq!(
+                opts_parser("equation : foo"),
+                Ok((r": foo", "equation ".to_string()))
+            );
+            assert_eq!(
+                opts_parser("equation [bar]: foo"),
+                Ok((r": foo", "equation [bar]".to_string()))
+            );
+            assert_eq!(
+                opts_parser("equation {bar}: foo"),
+                Ok((r": foo", "equation {bar}".to_string()))
+            );
+            assert_eq!(
+                opts_parser(r"equation {\bar\%}: foo"),
+                Ok((r": foo", r"equation {\bar\%}".to_string()))
+            );
+            assert_eq!(
+                opts_parser(r"equation {bar\: qux}: foo"),
+                Ok((r": foo", r"equation {bar: qux}".to_string()))
+            );
+
+            for e in vec![":E", "%E"] {
+                assert_eq!(opts_parser(e), Ok((e, "".to_string())));
+            }
+        }
+    }
+
+    macro_rules! args_parser_valid_input_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                "!!",
+                "@@:",
+                "##",
+                "&&",
+                "==",
+                "-:;-",
+                "__",
+                "//",
+                ";;",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
+
+    macro_rules! args_parser_valid_input_with_escaped_chars_examples {
+        () => {
+            vec![
+                "abc",
+                "áàê",
+                "äüß",
+                "абв",
+                r"\!!",
+                r"@@\:",
+                r"\\##",
+                r"&\%&",
+                r"=\\\\\=",
+                r"-\:\;-",
+                r"\%__",
+                r"//\%",
+                r";;\%",
+                ",,",
+                "..",
+                "()",
+                ")(",
+                "[]",
+                "][",
+                "{}",
+                "}{",
+                "<>",
+                "><",
+                "**",
+                "||",
+                "??",
+                "\"\"",
+                "''",
+                "      ",
+                "section",
+                "section*",
+                "equation*",
+            ]
+        };
+    }
+
+    #[cfg(test)]
+    mod args_chunk_parser_spec {
+        use super::super::args_chunk_parser;
+
+        #[test]
+        fn should_take_whole_input() {
+            for input in args_parser_valid_input_examples!() {
+                assert_eq!(args_chunk_parser(input), Ok(("", input)));
+            }
+        }
+
+        #[test]
+        fn should_take_only_the_escaped_percent_at_the_beginning() {
+            for valid_input in args_parser_valid_input_examples!() {
+                let input = r"\%".to_string() + valid_input;
+                assert_eq!(args_chunk_parser(&input), Ok((valid_input, r"\%")));
+            }
+        }
+
+        #[test]
+        fn should_take_only_the_backslash_at_the_beginning() {
+            for valid_input in args_parser_valid_input_examples!() {
+                let input = r"\".to_string() + valid_input;
+                assert_eq!(args_chunk_parser(&input), Ok((valid_input, r"\")));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            use nom::error::ErrorKind::IsNot;
+            use nom::Err::Error;
+
+            for valid_input in args_parser_valid_input_examples!() {
+                let input = "%".to_string() + valid_input;
+                assert_eq!(
+                    args_chunk_parser(&input),
+                    Err(Error((input.as_ref(), IsNot)))
+                );
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_or_escaped_char_after_taking_as_much_as_possible() {
+            for stop_sequence in vec!["%", r"\", r"\%"] {
+                for valid_input in args_parser_valid_input_examples!() {
+                    let expected_rest = stop_sequence.to_string() + valid_input;
+                    let input_with_stop_sequence = valid_input.to_string() + expected_rest.as_ref();
+                    assert_eq!(
+                        args_chunk_parser(&input_with_stop_sequence),
+                        Ok((expected_rest.as_ref(), valid_input))
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn prefer_escaped_percent_to_backslash() {
+            assert_eq!(args_chunk_parser(r"\\%"), Ok((r"\%", r"\")));
+            assert_eq!(args_chunk_parser(r"\%\"), Ok((r"\", r"\%")));
+        }
+
+        #[test]
+        fn realistic_examples() {
+            assert_eq!(
+                args_chunk_parser("equation: foo"),
+                Ok(("", "equation: foo"))
+            );
+            assert_eq!(
+                args_chunk_parser(r"\% equation : foo"),
+                Ok((" equation : foo", r"\%"))
+            );
+            assert_eq!(
+                args_chunk_parser("equation* : foo"),
+                Ok(("", "equation* : foo"))
+            );
+            assert_eq!(
+                args_chunk_parser(r"$\mathcal{H}_2$"),
+                Ok((r"\mathcal{H}_2$", "$"))
+            );
+            assert_eq!(
+                args_chunk_parser(r"\textbf{\texttt{$\frac{1}{2}$}}"),
+                Ok((r"textbf{\texttt{$\frac{1}{2}$}}", r"\"))
+            );
+        }
+    }
+
+    #[cfg(test)]
+    mod args_parser_spec {
+        use super::super::args_parser;
+
+        #[test]
+        fn should_take_whole_input() {
+            for valid_input in args_parser_valid_input_with_escaped_chars_examples!() {
+                assert_eq!(args_parser(valid_input), Ok(("", valid_input.to_string())));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_at_the_beginning() {
+            for valid_input in args_parser_valid_input_with_escaped_chars_examples!() {
+                let input = "%".to_string() + valid_input;
+                assert_eq!(args_parser(&input), Ok((input.as_ref(), "".to_string())));
+            }
+        }
+
+        #[test]
+        fn should_stop_at_a_terminator_after_taking_as_much_as_possible() {
+            for valid_input in args_parser_valid_input_with_escaped_chars_examples!() {
+                let expected_rest = "%".to_string() + valid_input;
+                let input_with_terminator = valid_input.to_string() + expected_rest.as_ref();
+                assert_eq!(
+                    args_parser(&input_with_terminator),
+                    Ok((expected_rest.as_ref(), valid_input.to_string()))
+                );
+            }
+        }
+
+        #[test]
+        fn realistic_examples() {
+            assert_eq!(
+                args_parser("equation: foo"),
+                Ok((r"", "equation: foo".to_string()))
+            );
+            assert_eq!(
+                args_parser("equation : foo"),
+                Ok((r"", "equation : foo".to_string()))
+            );
+            assert_eq!(
+                args_parser("equation [bar]: foo"),
+                Ok((r"", "equation [bar]: foo".to_string()))
+            );
+            assert_eq!(
+                args_parser("equation {bar}: foo"),
+                Ok((r"", "equation {bar}: foo".to_string()))
+            );
+            assert_eq!(
+                args_parser(r"equation {\bar\%}: foo"),
+                Ok((r"", r"equation {\bar\%}: foo".to_string()))
+            );
+            assert_eq!(
+                args_parser(r"equation {bar\: qux}: foo"),
+                Ok((r"", r"equation {bar\: qux}: foo".to_string()))
+            );
+            assert_eq!(
+                args_parser(r"\% equation : foo"),
+                Ok(("", r"\% equation : foo".to_string()))
+            );
+            assert_eq!(
+                args_parser(r"$\mathcal{H}_2$"),
+                Ok(("", r"$\mathcal{H}_2$".to_string()))
+            );
+            assert_eq!(
+                args_parser(r"\textbf{\texttt{$\frac{1}{2}$}}"),
+                Ok(("", r"\textbf{\texttt{$\frac{1}{2}$}}".to_string()))
+            );
+        }
+    }
+
+    #[cfg(test)]
+    mod hashline_parser_spec {
+        use super::super::hashline_parser;
+
+        #[test]
+        fn valid_hashlines() {
+            use super::super::RawHashlineParseData;
+
+            for (input, expected_raw_parse_data) in vec![
+                (
+                    "# foo:      ",
+                    RawHashlineParseData::new(
+                        0,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    " # foo: bar   ",
+                    RawHashlineParseData::new(
+                        1,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "bar".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "  # foo[bar]:",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        "[bar]".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "   # foo[bar]: qux",
+                    RawHashlineParseData::new(
+                        3,
+                        "foo".to_string(),
+                        "[bar]".to_string(),
+                        "qux".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    r"    # foo[\:]: bar",
+                    RawHashlineParseData::new(
+                        4,
+                        "foo".to_string(),
+                        "[:]".to_string(),
+                        "bar".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "   # foo: % bar",
+                    RawHashlineParseData::new(
+                        3,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "% bar".to_string(),
+                    ),
+                ),
+                (
+                    "  # foo: bar % baz",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        "".to_string(),
+                        "bar".to_string(),
+                        "% baz".to_string(),
+                    ),
+                ),
+                (
+                    r" # foo: bar\% % baz   ",
+                    RawHashlineParseData::new(
+                        1,
+                        "foo".to_string(),
+                        "".to_string(),
+                        r"bar\%".to_string(),
+                        "% baz".to_string(),
+                    ),
+                ),
+                (
+                    r"# foo\:bar:",
+                    RawHashlineParseData::new(
+                        0,
+                        "foo:bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    " # foo_bar:",
+                    RawHashlineParseData::new(
+                        1,
+                        "foo_bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    "  # foo bar:",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        "bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    r"  # foo\bar:",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        r"\bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+            ] {
+                assert_eq!(hashline_parser(input), Ok(("", expected_raw_parse_data)),);
+            }
+        }
+
+        #[test]
+        fn not_hashlines_incorrect_begin() {
+            use nom::error::ErrorKind::Tag;
+            use nom::Err::Error;
+
+            for (input, expected_rest) in vec![
+                (" \t# foo:", "\t# foo:"), // consume whitespace, but stopped at the tab
+                (r" \#", r"\#"),           // consume whitespace, but stopped at the backslash
+                ("#foo:", "#foo:"),        // could not consume "# "
+            ] {
+                assert_eq!(hashline_parser(input), Err(Error((expected_rest, Tag))));
+            }
+        }
+
+        #[test]
+        fn not_hashlines_name_not_found() {
+            use nom::error::ErrorKind::Many1;
+            use nom::Err::Error;
+
+            for (input, expected_rest) in vec![
+                (" #  foo:", " foo:"), // consume "# " and stop immediately at the second whitespace
+                ("# [foo:", "[foo:"),
+            ] {
+                assert_eq!(hashline_parser(input), Err(Error((expected_rest, Many1))));
+            }
+        }
+
+        #[test]
+        fn not_hashlines_colon_not_found() {
+            use nom::error::ErrorKind::Tag;
+            use nom::Err::Error;
+
+            for input in vec!["# foo", "  # foo bar", r"  # foo \%    \:", "# #"] {
+                assert_eq!(hashline_parser(input), Err(Error(("", Tag))));
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod itemline_parser_spec {
+        use super::super::itemline_parser;
+
+        #[test]
+        fn valid_itemlines() {
+            use super::super::RawItemlineParseData;
+
+            for (input, expected_raw_parse_data) in vec![
+                ("*", RawItemlineParseData::new(0, "".to_string())),
+                ("*  ", RawItemlineParseData::new(0, "".to_string())),
+                ("  *", RawItemlineParseData::new(2, "".to_string())),
+                ("  *  ", RawItemlineParseData::new(2, "".to_string())),
+                ("*foo", RawItemlineParseData::new(0, "foo".to_string())),
+                ("* foo", RawItemlineParseData::new(0, "foo".to_string())),
+                ("   * bar", RawItemlineParseData::new(3, "bar".to_string())),
+                ("***", RawItemlineParseData::new(0, "**".to_string())),
+            ] {
+                assert_eq!(itemline_parser(input), Ok(("", expected_raw_parse_data)),);
+            }
+        }
+
+        #[test]
+        fn not_itemlines() {
+            use nom::error::ErrorKind::Tag;
+            use nom::Err::Error;
+
+            for (input, expected_rest) in vec![
+                ("   baz   ", "baz   "),
+                ("qux   *", "qux   *"),
+                ("  abc * def", "abc * def"),
+                (r"  \\*  ", r"\\*  "),
+                (r"  \*  ", r"\*  "),
+                (r"\*  ", r"\*  "),
+            ] {
+                assert_eq!(itemline_parser(input), Err(Error((expected_rest, Tag))));
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod process_line_spec {
+        use super::super::process_line;
+
+        #[test]
+        fn yield_single_line_command() {
+            use super::super::Hashline::PlainLine;
+
+            for is_a_list_environment in vec![true, false] {
+                for (input, expected_result) in vec![
+                    (" # foo: bar", r" \foo{bar}"),
+                    ("  # foo{qux}: bar", r"  \foo{qux}{bar}"),
+                    ("  # foo    [qux]: bar", r"  \foo[qux]{bar}"),
+                    ("  # section*: bar", r"  \section*{bar}"),
+                    ("# section[qux]: bar", r"\section[qux]{bar}"),
+                    ("  # foo: bar % baz", r"  \foo{bar} % baz"),
+                    ("  # foo: bar      % baz", r"  \foo{bar} % baz"),
+                    ("  # foo[qux]: bar      % baz", r"  \foo[qux]{bar} % baz"),
+                    (r"  # foo[\:qux]: bar   % baz", r"  \foo[:qux]{bar} % baz"),
+                    (r"  # foo: bar \% % baz", r"  \foo{bar \%} % baz"),
+                    (r"  # foo: bar \%% baz", r"  \foo{bar \%} % baz"),
+                ] {
+                    assert_eq!(
+                        process_line(input.to_string(), is_a_list_environment),
+                        PlainLine(expected_result.to_string())
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn yield_plainline_outside_a_list_environment() {
+            use super::super::Hashline::PlainLine;
+
+            for s in vec![
+                "foo bar 123",
+                "  * 123 foo bar",
+                r"$\frac{1}{2}",
+                r"\begin{equation}",
+                r"\end{equation}",
+                r"\textbf{1}",
+                r"\newcommand{\foo}[1]{\textrm{#1}}",
+                "",
+                " ",
+                "\t",
+                " * foo",
+                r"  \\",
+            ] {
+                assert_eq!(process_line(s.to_string(), false), PlainLine(s.to_string()));
+            }
+        }
+
+        #[test]
+        fn yield_itemline() {
+            use super::super::Hashline::PlainLine;
+
+            for (input, expected_result) in vec![
+                ("* foo bar 123", r"\item foo bar 123"),
+                ("  * 123 foo bar", r"  \item 123 foo bar"),
+                (r"   * $\frac{1}{2}", r"   \item $\frac{1}{2}"),
+                (r"* \textbf{1}", r"\item \textbf{1}"),
+                ("  *", r"  \item"),
+                ("  *[A] B", r"  \item [A] B"),
+            ] {
+                assert_eq!(
+                    process_line(input.to_string(), true),
+                    PlainLine(expected_result.to_string())
+                );
+            }
+        }
+
+        #[test]
+        fn yield_plainline_in_a_list_environment() {
+            use super::super::Hashline::PlainLine;
+
+            for s in vec![
+                r"\item foo bar 123",
+                "   123 foo bar",
+                r"    $\frac{1}{2}",
+                r" \textbf{1}",
+                r"  \\",
+                "  ",
+                "  [A] B",
+            ] {
+                assert_eq!(process_line(s.to_string(), true), PlainLine(s.to_string()));
+            }
+        }
+
+        #[test]
+        fn yield_environment() {
+            use super::super::Hashline::OpenEnv;
+            use crate::parsing_types::Environment;
+
+            for is_a_list_environment in vec![true, false] {
+                for (input, expected_result) in vec![
+                    (
+                        " # foo: ",
+                        Environment::new(
+                            1,
+                            "foo".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # foo{qux}:",
+                        Environment::new(
+                            2,
+                            "foo".to_string(),
+                            "{qux}".to_string(),
+                            "".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # foo    [qux]: %",
+                        Environment::new(
+                            2,
+                            "foo".to_string(),
+                            "[qux]".to_string(),
+                            "%".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # equation*:  % bar",
+                        Environment::new(
+                            2,
+                            "equation*".to_string(),
+                            "".to_string(),
+                            "% bar".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "# equation*      :  ",
+                        Environment::new(
+                            0,
+                            "equation*".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            false,
+                        ),
+                    ),
+                    (
+                        "  # itemize:   % baz",
+                        Environment::new(
+                            2,
+                            "itemize".to_string(),
+                            "".to_string(),
+                            "% baz".to_string(),
+                            true,
+                        ),
+                    ),
+                    (
+                        r"   # foo[\:qux]:% baz",
+                        Environment::new(
+                            3,
+                            "foo".to_string(),
+                            "[:qux]".to_string(),
+                            "% baz".to_string(),
+                            false,
+                        ),
+                    ),
+                ] {
+                    assert_eq!(
+                        process_line(input.to_string(), is_a_list_environment),
+                        OpenEnv(expected_result),
+                    );
+                }
+            }
+        }
     }
 }
 // LCOV_EXCL_STOP
