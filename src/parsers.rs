@@ -1,3 +1,11 @@
+struct RawHashlineParseData {
+    indent_depth: usize,
+    name: String,
+    opts: String,
+    args: String,
+    comment: String,
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Hashline {
     OpenEnv(Environment),
@@ -11,6 +19,39 @@ pub struct Environment {
     opts: String,
     comment: String,
     is_list_like: bool,
+}
+
+impl From<RawHashlineParseData> for Hashline {
+    fn from(raw_hashline: RawHashlineParseData) -> Self {
+        // FIXME: Trimming should not be a part of data conversion
+
+        if raw_hashline.args.trim().is_empty() {
+            // If no args are given, it's an environment
+            Hashline::OpenEnv(Environment {
+                indent_depth: raw_hashline.indent_depth,
+                name: raw_hashline.name.trim().to_string(), // FIXME: Avoid reallocation here
+                opts: raw_hashline.opts.trim().to_string(), // FIXME: Avoid reallocation here
+                comment: raw_hashline.comment.trim().to_string(), // FIXME: Avoid reallocation here
+                is_list_like: list_env_parser(raw_hashline.name.as_ref()).is_ok(),
+            })
+        } else {
+            // If there are some args, it's a single-line command
+            Hashline::PlainLine(format!(
+                r"{dummy:ind$}\{name}{opts}{{{args}}}{comment_sep}{comment}",
+                dummy = "",
+                ind = raw_hashline.indent_depth,
+                name = raw_hashline.name.trim(),
+                opts = raw_hashline.opts.trim(),
+                args = raw_hashline.args.trim(),
+                comment_sep = if raw_hashline.comment.trim().is_empty() {
+                    ""
+                } else {
+                    " "
+                },
+                comment = raw_hashline.comment.trim(),
+            ))
+        }
+    }
 }
 
 impl Environment {
@@ -123,60 +164,35 @@ fn args_parser(input: &str) -> nom::IResult<&str, String> {
     )(input)
 }
 
-fn hashline_parser(input: &str) -> nom::IResult<&str, Hashline> {
+fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
     use nom::bytes::complete::{is_a, tag};
     use nom::combinator::{opt, rest};
 
-    let (input, res) = opt(is_a(" "))(input)?;
-    let ws = res.unwrap_or("");
+    let (input, indentation) = opt(is_a(" "))(input)?;
     let (input, _) = tag("# ")(input)?;
     let (input, name) = name_parser(input)?;
     let (input, opts) = opts_parser(input)?;
     let (input, _) = tag(":")(input)?;
     let (input, args) = args_parser(input)?;
     let (input, comment) = rest(input)?;
-    Ok((input, hashline_helper(&ws, &name, &opts, &args, comment)))
-}
 
-#[inline]
-fn hashline_helper(ws: &str, name: &str, opts: &str, args: &str, comment: &str) -> Hashline {
-    use self::Hashline::{OpenEnv, PlainLine};
-
-    // It is ok to unwrap here, since we have checked for UTF-8 when we read the file
-    let name_trimmed = name.trim();
-    let opts_trimmed = opts.trim();
-    let args_trimmed = args.trim();
-    let comment_trimmed = comment.trim();
-
-    if args_trimmed.is_empty() {
-        // If no args are given, it's an environment
-        let env = Environment {
-            indent_depth: ws.len(),
-            name: name_trimmed.to_string(),
-            opts: opts_trimmed.to_string(),
-            comment: comment_trimmed.to_string(),
-            is_list_like: list_env_parser(name).is_ok(),
-        };
-        OpenEnv(env)
-    } else {
-        // If there are some args, it's a single-line command
-        PlainLine(format!(
-            r"{indent}\{name}{opts}{{{args}}}{comment_sep}{comment}",
-            indent = ws,
-            name = name_trimmed,
-            opts = opts_trimmed,
-            args = args_trimmed,
-            comment_sep = if comment_trimmed.is_empty() { "" } else { " " },
-            comment = comment_trimmed,
-        ))
-    }
+    Ok((
+        input,
+        RawHashlineParseData {
+            indent_depth: indentation.map_or(0, |s| s.len()),
+            name: name,
+            opts: opts,
+            args: args,
+            comment: comment.to_string(),
+        },
+    ))
 }
 
 // Hashline processing
 #[inline]
 fn process_hashline<T: AsRef<str>>(line: T) -> Option<Hashline> {
     match hashline_parser(line.as_ref()) {
-        Ok((_, r)) => Some(r),
+        Ok((_, r)) => Some(r.into()),
         Err(_) => None,
     }
 }
@@ -974,78 +990,116 @@ mod tests {
     }
 
     #[cfg(test)]
-    mod other_tests {
-        #[test]
-        fn hashline_helper_plain_lines() {
-            use super::super::{hashline_helper, Hashline};
+    mod raw_hashline_parser_data_into_hashline {
+        use super::super::{Hashline, RawHashlineParseData};
 
+        #[test]
+        fn plain_lines() {
             assert_eq!(
-                hashline_helper("", "foo", "", "bar", ""),
+                Hashline::from(RawHashlineParseData {
+                    indent_depth: 0,
+                    name: "foo".to_string(),
+                    opts: "".to_string(),
+                    args: "bar".to_string(),
+                    comment: "".to_string()
+                }),
                 Hashline::PlainLine("\\foo{bar}".to_string())
             );
             assert_eq!(
-                hashline_helper("  ", "foo", "", "bar", "qux"),
+                Hashline::from(RawHashlineParseData {
+                    indent_depth: 2,
+                    name: "foo".to_string(),
+                    opts: "".to_string(),
+                    args: "bar".to_string(),
+                    comment: "qux".to_string()
+                }),
                 Hashline::PlainLine("  \\foo{bar} qux".to_string())
             );
             assert_eq!(
-                hashline_helper("    ", "foo", "bar", "qux", ""),
+                Hashline::from(RawHashlineParseData {
+                    indent_depth: 4,
+                    name: "foo".to_string(),
+                    opts: "bar".to_string(),
+                    args: "qux".to_string(),
+                    comment: "".to_string()
+                }),
                 Hashline::PlainLine("    \\foobar{qux}".to_string())
             );
         }
 
         #[test]
-        fn hashline_helper_environments() {
-            use super::super::{hashline_helper, Environment, Hashline};
+        fn environments() {
+            use super::super::Environment;
 
-            let env_ref_1 = Environment {
-                indent_depth: 0,
-                name: "foo".to_string(),
-                opts: "bar".to_string(),
-                comment: "".to_string(),
-                is_list_like: false,
-            };
             assert_eq!(
-                hashline_helper("", "foo", "bar", "", ""),
-                Hashline::OpenEnv(env_ref_1)
+                Hashline::from(RawHashlineParseData {
+                    indent_depth: 0,
+                    name: "foo".to_string(),
+                    opts: "bar".to_string(),
+                    args: "".to_string(),
+                    comment: "".to_string()
+                }),
+                Hashline::OpenEnv(Environment {
+                    indent_depth: 0,
+                    name: "foo".to_string(),
+                    opts: "bar".to_string(),
+                    comment: "".to_string(),
+                    is_list_like: false,
+                })
             );
-
-            let env_ref_2 = Environment {
-                indent_depth: 2,
-                name: "foo".to_string(),
-                opts: "".to_string(),
-                comment: "bar".to_string(),
-                is_list_like: false,
-            };
             assert_eq!(
-                hashline_helper("  ", "foo", "", "", "bar"),
-                Hashline::OpenEnv(env_ref_2)
+                Hashline::from(RawHashlineParseData {
+                    indent_depth: 2,
+                    name: "foo".to_string(),
+                    opts: "".to_string(),
+                    args: "".to_string(),
+                    comment: "bar".to_string()
+                }),
+                Hashline::OpenEnv(Environment {
+                    indent_depth: 2,
+                    name: "foo".to_string(),
+                    opts: "".to_string(),
+                    comment: "bar".to_string(),
+                    is_list_like: false,
+                })
             );
-
-            let env_ref_3 = Environment {
-                indent_depth: 4,
-                name: "foo".to_string(),
-                opts: "bar".to_string(),
-                comment: "qux".to_string(),
-                is_list_like: false,
-            };
             assert_eq!(
-                hashline_helper("    ", "foo", "bar", "", "qux"),
-                Hashline::OpenEnv(env_ref_3)
+                Hashline::from(RawHashlineParseData {
+                    indent_depth: 4,
+                    name: "foo".to_string(),
+                    opts: "bar".to_string(),
+                    args: "".to_string(),
+                    comment: "qux".to_string()
+                }),
+                Hashline::OpenEnv(Environment {
+                    indent_depth: 4,
+                    name: "foo".to_string(),
+                    opts: "bar".to_string(),
+                    comment: "qux".to_string(),
+                    is_list_like: false,
+                })
             );
-
-            let env_ref_4 = Environment {
-                indent_depth: 0,
-                name: "itemize".to_string(),
-                opts: "bar".to_string(),
-                comment: "qux".to_string(),
-                is_list_like: true,
-            };
             assert_eq!(
-                hashline_helper("", "itemize", "bar", "", "qux"),
-                Hashline::OpenEnv(env_ref_4)
+                Hashline::from(RawHashlineParseData {
+                    indent_depth: 0,
+                    name: "itemize".to_string(),
+                    opts: "bar".to_string(),
+                    args: "".to_string(),
+                    comment: "qux".to_string()
+                }),
+                Hashline::OpenEnv(Environment {
+                    indent_depth: 0,
+                    name: "itemize".to_string(),
+                    opts: "bar".to_string(),
+                    comment: "qux".to_string(),
+                    is_list_like: true,
+                })
             );
         }
+    }
 
+    #[cfg(test)]
+    mod other_tests {
         #[test]
         fn process_itemline() {
             use super::super::{process_itemline, Hashline};
