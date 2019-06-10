@@ -60,7 +60,7 @@ fn escaped_colon(input: &str) -> nom::IResult<&str, &str> {
     use nom::bytes::complete::tag;
     use nom::sequence::preceded;
 
-    preceded(tag("\\"), tag(":"))(input)
+    preceded(tag(r"\"), tag(":"))(input)
 }
 
 #[inline]
