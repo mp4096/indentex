@@ -1,4 +1,4 @@
-use crate::parsing_types::{Hashline, RawHashlineParseData};
+use crate::parsing_types::{Hashline, RawHashlineParseData, RawItemlineParseData};
 
 #[inline]
 fn escaped_colon(input: &str) -> nom::IResult<&str, &str> {
@@ -93,33 +93,28 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
 }
 
 // Itemline parsers
-fn itemline_parser(input: &str) -> nom::IResult<&str, Hashline> {
-    use self::Hashline::PlainLine;
-
+fn itemline_parser(input: &str) -> nom::IResult<&str, RawItemlineParseData> {
     use nom::bytes::complete::{is_a, tag};
     use nom::combinator::{opt, rest};
 
-    let (input, indent) = opt(is_a(" "))(input)?;
+    let (input, indentation) = opt(is_a(" "))(input)?;
     let (input, _) = tag("*")(input)?;
     let (input, item) = rest(input)?;
 
     Ok((
         input,
-        PlainLine(format!(
-            r"{indent}\item{item_sep}{content}",
-            indent = indent.unwrap_or(""),
-            content = item.trim(),
-            item_sep = if item.trim().is_empty() { "" } else { " " },
-        )),
+        RawItemlineParseData::new(indentation.map_or(0, |s| s.len()), item.trim().to_string()),
     ))
 }
 
 // Itemline processing
 #[inline]
-fn process_itemline<T: AsRef<str>>(line: T) -> Option<Hashline> {
+fn process_itemline(line: String) -> Hashline {
+    use self::Hashline::PlainLine;
+
     match itemline_parser(line.as_ref()) {
-        Ok((_, r)) => Some(r),
-        Err(_) => None,
+        Ok((_, r)) => r.into(),
+        Err(_) => PlainLine(line),
     }
 }
 
@@ -129,7 +124,7 @@ pub fn process_line(line: String, list_like_active: bool) -> Hashline {
 
     match (hashline_parser(line.as_ref()), list_like_active) {
         (Ok((_, r)), _) => r.into(),
-        (_, true) => process_itemline(&line).unwrap_or_else(|| PlainLine(line)),
+        (_, true) => process_itemline(line),
         (_, false) => PlainLine(line),
     }
 }
@@ -880,47 +875,40 @@ mod tests {
     }
 
     #[cfg(test)]
-    mod other_tests {
+    mod itemline_parser_spec {
+        use super::super::{itemline_parser, RawItemlineParseData};
+
         #[test]
-        fn process_itemline() {
-            use super::super::{process_itemline, Hashline};
+        fn valid_itemlines() {
+            for (input, expected_raw_parse_data) in vec![
+                ("*", RawItemlineParseData::new(0, "".to_string())),
+                ("*  ", RawItemlineParseData::new(0, "".to_string())),
+                ("  *", RawItemlineParseData::new(2, "".to_string())),
+                ("  *  ", RawItemlineParseData::new(2, "".to_string())),
+                ("*foo", RawItemlineParseData::new(0, "foo".to_string())),
+                ("* foo", RawItemlineParseData::new(0, "foo".to_string())),
+                ("   * bar", RawItemlineParseData::new(3, "bar".to_string())),
+                ("***", RawItemlineParseData::new(0, "**".to_string())),
+            ] {
+                assert_eq!(itemline_parser(input), Ok(("", expected_raw_parse_data)),);
+            }
+        }
 
-            // Valid itemlines
-            assert_eq!(
-                process_itemline("*"),
-                Some(Hashline::PlainLine("\\item".to_string()))
-            );
-            assert_eq!(
-                process_itemline("*  "),
-                Some(Hashline::PlainLine("\\item".to_string()))
-            );
-            assert_eq!(
-                process_itemline("  *"),
-                Some(Hashline::PlainLine("  \\item".to_string()))
-            );
-            assert_eq!(
-                process_itemline("  *  "),
-                Some(Hashline::PlainLine("  \\item".to_string()))
-            );
-            assert_eq!(
-                process_itemline("* foo"),
-                Some(Hashline::PlainLine("\\item foo".to_string()))
-            );
-            assert_eq!(
-                process_itemline("  * bar"),
-                Some(Hashline::PlainLine("  \\item bar".to_string()))
-            );
-            assert_eq!(
-                process_itemline("****"),
-                Some(Hashline::PlainLine("\\item ***".to_string()))
-            );
+        #[test]
+        fn not_itemlines() {
+            use nom::error::ErrorKind::Tag;
+            use nom::Err::Error;
 
-            // Not an itemline
-            assert_eq!(process_itemline("  baz"), None);
-            assert_eq!(process_itemline("qux *"), None);
-            assert_eq!(process_itemline("  abc * def"), None);
-            assert_eq!(process_itemline("  \\*  "), None);
-            assert_eq!(process_itemline("\\*  "), None);
+            for (input, expected_rest) in vec![
+                ("   baz   ", "baz   "),
+                ("qux   *", "qux   *"),
+                ("  abc * def", "abc * def"),
+                (r"  \\*  ", r"\\*  "),
+                (r"  \*  ", r"\*  "),
+                (r"\*  ", r"\*  "),
+            ] {
+                assert_eq!(itemline_parser(input), Err(Error((expected_rest, Tag))));
+            }
         }
     }
 }
