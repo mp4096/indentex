@@ -59,16 +59,15 @@ fn is_a_list_environment(input: &str) -> bool {
 
 impl From<RawHashlineParseData> for Hashline {
     fn from(raw_hashline: RawHashlineParseData) -> Self {
-        // FIXME: Trimming should not be a part of data conversion
-
         if raw_hashline.args.trim().is_empty() {
             // If no args are given, it's an environment
+            let is_list_like = is_a_list_environment(raw_hashline.name.as_ref());
             Hashline::OpenEnv(Environment {
                 indent_depth: raw_hashline.indent_depth,
-                name: raw_hashline.name.trim().to_string(), // FIXME: Avoid reallocation here
-                opts: raw_hashline.opts.trim().to_string(), // FIXME: Avoid reallocation here
-                comment: raw_hashline.comment.trim().to_string(), // FIXME: Avoid reallocation here
-                is_list_like: is_a_list_environment(raw_hashline.name.as_ref()),
+                name: raw_hashline.name, // FIXME: Avoid reallocation here
+                opts: raw_hashline.opts, // FIXME: Avoid reallocation here
+                comment: raw_hashline.comment, // FIXME: Avoid reallocation here
+                is_list_like: is_list_like,
             })
         } else {
             // If there are some args, it's a single-line command
@@ -76,10 +75,10 @@ impl From<RawHashlineParseData> for Hashline {
                 r"{dummy:ind$}\{name}{opts}{{{args}}}{comment_sep}{comment}",
                 dummy = "",
                 ind = raw_hashline.indent_depth,
-                name = raw_hashline.name.trim(),
-                opts = raw_hashline.opts.trim(),
-                args = raw_hashline.args.trim(),
-                comment_sep = if raw_hashline.comment.trim().is_empty() {
+                name = raw_hashline.name,
+                opts = raw_hashline.opts,
+                args = raw_hashline.args,
+                comment_sep = if raw_hashline.comment.is_empty() {
                     ""
                 } else {
                     " "

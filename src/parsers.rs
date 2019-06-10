@@ -84,10 +84,10 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
         input,
         RawHashlineParseData::new(
             indentation.map_or(0, |s| s.len()),
-            name,
-            opts,
-            args,
-            comment.to_string(),
+            name.trim().to_string(),    // FIXME: Avoid copying here
+            opts.trim().to_string(),    // FIXME: Avoid copying here
+            args.trim().to_string(),    // FIXME: Avoid copying here
+            comment.trim().to_string(), // FIXME: Avoid copying here
         ),
     ))
 }
