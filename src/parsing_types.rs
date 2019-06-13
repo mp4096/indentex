@@ -67,7 +67,7 @@ impl From<RawHashlineParseData> for Hashline {
                 name: raw_hashline.name,
                 opts: raw_hashline.opts,
                 comment: raw_hashline.comment,
-                is_list_like: is_list_like,
+                is_list_like,
             })
         } else {
             // If there are some args, it's a single-line command
@@ -112,6 +112,7 @@ impl From<RawItemlineParseData> for Hashline {
 }
 
 impl Environment {
+    #[cfg(test)]
     pub fn new(
         indent_depth: usize,
         name: String,
