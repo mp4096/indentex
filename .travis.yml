@@ -57,15 +57,15 @@ script:
 
 after_success: >
   if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$TRAVIS_RUST_VERSION" == "stable" ]]; then
-    wget https://github.com/SimonKagstrom/kcov/archive/v35.tar.gz &&
-    tar xzf v35.tar.gz &&
-    mkdir kcov-35/build &&
-    cd kcov-35/build &&
+    wget https://github.com/SimonKagstrom/kcov/archive/v36.tar.gz &&
+    tar xzf v36.tar.gz &&
+    mkdir kcov-36/build &&
+    cd kcov-36/build &&
     cmake -DCMAKE_INSTALL_PREFIX:PATH=$LOCAL .. &&
     make &&
     make install &&
     cd ../.. &&
-    rm -rf kcov-35 &&
+    rm -rf kcov-36 &&
     cargo clean &&
     RUSTFLAGS='-C link-dead-code' cargo test --no-run &&
     for file in target/debug/indentex-*; do
