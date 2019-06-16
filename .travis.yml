@@ -80,11 +80,8 @@ after_success: >
 # Deploy to GitHub releases on tag builds
 before_deploy:
   - cargo install cargo-deb
-  - cargo build --release --target=x86_64-unknown-linux-gnu
-  - rm -rf "target/release"
-  - mv "target/x86_64-unknown-linux-gnu/release" "target/"
-  - cargo deb --no-build
-  - DEBFILENAME="$(find target/debian -type f -name 'indentex_*_amd64.deb')"
+  - cargo deb --target=x86_64-unknown-linux-gnu
+  - DEBFILENAME="$(find target/x86_64-unknown-linux-gnu/debian -type f -name 'indentex_*_amd64.deb')"
   - sha512sum $DEBFILENAME > $DEBFILENAME.DIGEST
 
 deploy:
@@ -92,7 +89,7 @@ deploy:
   api_key:
     secure: MsTSgiPa8qQ4iWDFYqyjyUgve/Ejyy68M1gCb0bFbyrS4tvL7rg6eUkm2kj81YdzYrf+VPC38IEsLATba0IX8/DHxPwiPV4lTP3d2T2giZWWH6JICO4ScJKHXgurrlzl+JMKYnKoFHdbkK5/DC6o0TYnFXFF4laZ4GDswGF+mYnDe1iCv6DoUD6R/ntCBugNi9EL6+CV7UPuW/4hlUHmWEzss934oy3w6nUIa7+DoSeUY00eO5J0JkazCe94K1XeJMI9WIJyXiWGlPg2Q4ToDqBfyiVcuOcGaUl5qmma6IXDCJQrK8yYgpXkxgcLefCRW9wOzivESzh1LJHklyjmC3rvckhM0z54L06PTRDjssh9eUnKnv7zIWrV2u82dk6cdQBT96V7xFB6HZG0H5gAkQaipotoqCMDv6+A9yIxhLxyiSA/Rpy1G1r6i2hYlBb04CPyBhGUyeGN17OkoDvqzyzEDG/DGDj+STmrS2IFA2S/pX7davnIdSqhkIj+x0pyu5av810GgG86KdmDJ3moqu4RhE5OY5GFyxQEsD9aSr6/ic3DRtGJ7lRhfYYvzNEVfNqFmtVL8v+xDhCaPvKWOhD/4d3z8/k553EVSK9eMDtrFr/x3ixQ+8a9xM1jsknln7BJjqY3v+cJHRF6t7an4WPzGeOmDfobijNgm8Znt4c=
   file_glob: true
-  file: "target/debian/indentex_*_amd64.deb*"
+  file: "target/x86_64-unknown-linux-gnu/debian/indentex_*_amd64.deb*"
   skip_cleanup: true
   on:
     condition: "($TRAVIS_RUST_VERSION = stable) && ($TRAVIS_OS_NAME == linux)"

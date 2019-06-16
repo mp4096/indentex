@@ -28,8 +28,8 @@ debug-assertions = false
 [package.metadata.deb]
 maintainer = "Mikhail Pak <code@mp4096.com>"
 copyright = "2016-2019, Mikhail Pak <code@mp4096.com>, Hans Kirchner <h.kirchner@tum.de>"
-license_file = ["LICENSE.md", "6"]
-extended_description = "A transpiler for an indentation-based superset of LaTeX."
+license-file = ["LICENSE.md", "6"]
+extended-description = "A transpiler for an indentation-based superset of LaTeX."
 depends = "$auto"
 section = "tex"
 priority = "optional"
