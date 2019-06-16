@@ -36,22 +36,30 @@ mod tests {
     #[test]
     fn from_io_error() {
         let io_error = std::io::Error::new(std::io::ErrorKind::Other, "foo");
-        assert_eq!(format!("{}", IndentexError::from(io_error)), "foo");
+        let io_error_debug = format!("{:?}", io_error);
+        let err = IndentexError::from(io_error);
+        assert_eq!(format!("{}", err), "foo");
+        assert_eq!(format!("{:?}", err), format!("Io({})", io_error_debug));
     }
 
     #[test]
     fn from_ignore_error() {
         let io_error = std::io::Error::new(std::io::ErrorKind::Other, "bar");
         let ignore_error = ignore::Error::Io(io_error);
-        assert_eq!(format!("{}", IndentexError::from(ignore_error)), "bar");
+        let ignore_error_debug = format!("{:?}", ignore_error);
+        let err = IndentexError::from(ignore_error);
+        assert_eq!(format!("{}", err), "bar");
+        assert_eq!(
+            format!("{:?}", err),
+            format!("WalkError({})", ignore_error_debug)
+        );
     }
 
     #[test]
     fn invalid_extension() {
-        assert_eq!(
-            format!("{}", IndentexError::InvalidExtension),
-            "not a valid indentex file"
-        );
+        let err = IndentexError::InvalidExtension;
+        assert_eq!(format!("{}", err), "not a valid indentex file");
+        assert_eq!(format!("{:?}", err), "InvalidExtension");
     }
 }
 // LCOV_EXCL_STOP
