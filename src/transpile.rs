@@ -204,7 +204,7 @@ mod tests {
             .map(|e| e.to_string())
             .collect();
 
-            assert_display_snapshot_matches!(transpile(input, &to));
+            assert_display_snapshot_matches!("environments", transpile(input, &to));
         }
 
         #[test]
@@ -255,7 +255,7 @@ mod tests {
             .map(|e| e.to_string())
             .collect();
 
-            assert_display_snapshot_matches!(transpile(input, &to));
+            assert_display_snapshot_matches!("list_like", transpile(input, &to));
         }
 
         #[test]
@@ -287,7 +287,7 @@ mod tests {
             .map(|e| e.to_string())
             .collect();
 
-            assert_display_snapshot_matches!(transpile(input, &to));
+            assert_display_snapshot_matches!("single_line_commands", transpile(input, &to));
         }
 
         #[test]
@@ -313,7 +313,7 @@ mod tests {
             .map(|e| e.to_string())
             .collect();
 
-            assert_display_snapshot_matches!(transpile(input, &to));
+            assert_display_snapshot_matches!("corner_cases", transpile(input, &to));
         }
 
         #[test]
@@ -337,7 +337,7 @@ mod tests {
             .map(|e| e.to_string())
             .collect();
 
-            assert_display_snapshot_matches!(transpile(input, &to));
+            assert_display_snapshot_matches!("mixed_tabs", transpile(input, &to));
         }
     }
 }
