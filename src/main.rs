@@ -67,13 +67,13 @@ fn main() {
             Ok(b) => b,
             Err(e) => {
                 ret_val = ReturnCode::WalkError as i32;
-                println!("{}", e);
+                eprintln!("{}", e);
                 Vec::new()
             }
         }
     } else {
         ret_val = ReturnCode::FileTypeError as i32;
-        println!(
+        eprintln!(
             "Error: path '{}' is neither a file nor a directory",
             path.display()
         );
@@ -93,7 +93,7 @@ fn main() {
                 if verbose {
                     println!("Transpiling file '{}'... failed", p.display());
                 }
-                println!("Could not transpile '{}': {}", p.display(), e);
+                eprintln!("Could not transpile '{}': {}", p.display(), e);
                 ReturnCode::TranspilationError
             }
         } as i32)
