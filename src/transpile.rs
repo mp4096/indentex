@@ -161,5 +161,184 @@ mod tests {
         assert_eq!(scan_indents(&d), [0, 1, 1, 1, 3, 3, 2, 5, 0]);
         assert_eq!(scan_indents(&d).capacity(), 9);
     }
+
+    mod transpile_spec {
+        use super::super::transpile;
+        use super::super::TranspileOptions;
+        use insta::assert_display_snapshot_matches;
+
+        #[test]
+        fn environments() {
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+
+            let input = (vec![
+                "# equation*:",
+                "  # label: eq:test",
+                "  a + b",
+                "",
+                "# tikzpicture [x = 2 cm]:",
+                "  \\draw (0, 0) -- (1, 1);",
+                "",
+                "Comments should be handled correctly:",
+                "# equation: % test",
+                "  a + b",
+                "# remark [test percent escaping \\%]: % baz",
+                "  foo bar",
+                "",
+                "Nested environment should be handled correctly",
+                "# a:",
+                "  # b:",
+                "    # c:",
+                "      # d:",
+                "        # e:",
+                "          # f:",
+                "            # g:",
+                "              # h:",
+                "                # i:",
+                "                  foobar",
+            ])
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect();
+
+            assert_display_snapshot_matches!(transpile(input, &to));
+        }
+
+        #[test]
+        fn list_like() {
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+
+            let input = (vec![
+                "These lines should not be converted:",
+                "* a",
+                "\\* b",
+                "\\\\* c",
+                "",
+                "",
+                "These lines should be converted to items:",
+                "# itemize:",
+                "  * яблоки",
+                "  * груши",
+                "  * абрикосы",
+                "",
+                "# enumerate:",
+                "  * Alice",
+                "  * Bob",
+                "  *",
+                "",
+                "# description:",
+                "  *[Ä] letter Ä",
+                "  *[Ü] letter Ü",
+                "",
+                "",
+                "# itemize:",
+                "  * first level, first item",
+                "    # itemize:",
+                "      * second level, first item",
+                "      * second level, second item",
+                "  * first level, second item",
+                "    # equation:",
+                "      * % this should not be converted",
+                "",
+                "",
+                "# enumerate:",
+                "  * This should be converted to an item",
+                "  \\* and this not",
+            ])
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect();
+
+            assert_display_snapshot_matches!(transpile(input, &to));
+        }
+
+        #[test]
+        fn single_line_commands() {
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+
+            let input = (vec![
+                "This should be converted:",
+                "# section: Foo bar",
+                "# section: Foo: bar",
+                "# section [Foo bar]: Foo bar",
+                "# section [Foo\\: bar]: Foo: bar",
+                "# section* : spam eggs",
+                "",
+                "Comments should be handled correctly:",
+                "# section: foo bar % test",
+                "# section: \\% baz % test",
+                "",
+                "This should not be converted:",
+                "# sec%tion: foo bar",
+                "# section % baz: foo bar",
+                "# section",
+                "#section: Foo",
+            ])
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect();
+
+            assert_display_snapshot_matches!(transpile(input, &to));
+        }
+
+        #[test]
+        fn corner_cases() {
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+
+            let input = (vec![
+                "# foo\\bar:",
+                "  qux",
+                "# foo\\bar: baz",
+                "# foo\\bar:",
+                "# foo1: bar",
+                "# foo 1: bar",
+                "# foo1:",
+                "  qux",
+                "# foo 1:",
+                "  qux",
+            ])
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect();
+
+            assert_display_snapshot_matches!(transpile(input, &to));
+        }
+
+        #[test]
+        fn mixed_tabs() {
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+
+            let input = (vec![
+                "\t# foo: bar",
+                "# level0:",
+                " # level1:",
+                "\t\tlevel2",
+                "   # level3:",
+                "\t\t\t\tlevel4",
+                "   # level3:",
+                "\t\t\tlevel3",
+            ])
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect();
+
+            assert_display_snapshot_matches!(transpile(input, &to));
+        }
+    }
 }
 // LCOV_EXCL_STOP

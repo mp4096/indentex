@@ -1,0 +1,44 @@
+---
+created: "2019-06-16T17:28:50.217937894Z"
+creator: insta@0.8.1
+source: src/transpile.rs
+expression: "transpile(input, &to)"
+---
+\begin{equation*}
+  \label{eq:test}
+  a + b
+\end{equation*}
+
+\begin{tikzpicture}[x = 2 cm]
+  \draw (0, 0) -- (1, 1);
+\end{tikzpicture}
+
+Comments should be handled correctly:
+\begin{equation} % test
+  a + b
+\end{equation}
+\begin{remark}[test percent escaping \%] % baz
+  foo bar
+\end{remark}
+
+Nested environment should be handled correctly
+\begin{a}
+  \begin{b}
+    \begin{c}
+      \begin{d}
+        \begin{e}
+          \begin{f}
+            \begin{g}
+              \begin{h}
+                \begin{i}
+                  foobar
+                \end{i}
+              \end{h}
+            \end{g}
+          \end{f}
+        \end{e}
+      \end{d}
+    \end{c}
+  \end{b}
+\end{a}
+

@@ -1,0 +1,23 @@
+---
+created: "2019-06-16T17:34:13.256877683Z"
+creator: insta@0.8.1
+source: src/transpile.rs
+expression: "transpile(input, &to)"
+---
+This should be converted:
+\section{Foo bar}
+\section{Foo: bar}
+\section[Foo bar]{Foo bar}
+\section[Foo: bar]{Foo: bar}
+\section*{spam eggs}
+
+Comments should be handled correctly:
+\section{foo bar} % test
+\section{\% baz} % test
+
+This should not be converted:
+# sec%tion: foo bar
+# section % baz: foo bar
+# section
+#section: Foo
+

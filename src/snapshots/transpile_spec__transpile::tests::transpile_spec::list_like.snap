@@ -1,0 +1,49 @@
+---
+created: "2019-06-16T17:28:50.217938569Z"
+creator: insta@0.8.1
+source: src/transpile.rs
+expression: "transpile(input, &to)"
+---
+These lines should not be converted:
+* a
+\* b
+\\* c
+
+
+These lines should be converted to items:
+\begin{itemize}
+  \item яблоки
+  \item груши
+  \item абрикосы
+\end{itemize}
+
+\begin{enumerate}
+  \item Alice
+  \item Bob
+  \item
+\end{enumerate}
+
+\begin{description}
+  \item [Ä] letter Ä
+  \item [Ü] letter Ü
+\end{description}
+
+
+\begin{itemize}
+  \item first level, first item
+    \begin{itemize}
+      \item second level, first item
+      \item second level, second item
+    \end{itemize}
+  \item first level, second item
+    \begin{equation}
+      * % this should not be converted
+    \end{equation}
+\end{itemize}
+
+
+\begin{enumerate}
+  \item This should be converted to an item
+  \* and this not
+\end{enumerate}
+

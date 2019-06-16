@@ -1,0 +1,19 @@
+---
+created: "2019-06-16T17:47:22.205827359Z"
+creator: insta@0.8.1
+source: src/transpile.rs
+expression: "transpile(input, &to)"
+---
+	# foo: bar
+\begin{level0}
+ \begin{level1}
+		level2
+   \begin{level3}
+				level4
+   \end{level3}
+   \begin{level3}
+   \end{level3}
+			level3
+ \end{level1}
+\end{level0}
+
