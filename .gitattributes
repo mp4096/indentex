@@ -1,2 +1,1 @@
-packaging/*  linguist-documentation=true
-tests/*  linguist-documentation=true
+*.tex linguist-detectable=false
