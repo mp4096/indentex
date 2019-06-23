@@ -1,3 +1,6 @@
+mod error;
+mod file_utils;
+
 enum ReturnCode {
     Ok = 0,
     WalkError = 2,
@@ -5,10 +8,24 @@ enum ReturnCode {
     TranspilationError = 8,
 }
 
+pub fn transpile_file<T: AsRef<std::path::Path>>(
+    path: T,
+    options: &indentexlib::TranspileOptions,
+) -> Result<(), crate::error::IndentexError> {
+    use crate::file_utils::{read_and_trim_lines, rename_indentex_file, write_to_file};
+
+    let lines = read_and_trim_lines(path.as_ref())?;
+    let transpiled_text = indentexlib::transpile(lines, options);
+    let path_out = rename_indentex_file(path)?;
+    write_to_file(path_out, &transpiled_text)?;
+
+    Ok(())
+}
+
 fn main() {
+    use crate::file_utils::walk_indentex_files;
     use clap::{crate_authors, crate_description, crate_version, App, Arg};
-    use indentexlib::file_utils::walk_indentex_files;
-    use indentexlib::transpile::{transpile_file, TranspileOptions};
+    use indentexlib::TranspileOptions;
     use rayon::prelude::*;
     use std::cmp;
     use std::path::{Path, PathBuf};
