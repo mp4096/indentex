@@ -1,5 +1,6 @@
 mod parsers;
 mod parsing_types;
+pub mod preprocessing;
 mod utils;
 
 const LINESEP: &str = "\n";
