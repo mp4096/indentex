@@ -47,8 +47,7 @@ before_test:
     -FileName ./tests/blns/blns.inden.tex
 
 test_script:
-  - cargo build
-  - cargo test
+  - cargo test --all
   - cargo run -- -v ./tests/
   - cargo run -- -v ./tests/empty_folder/  # Check how indentex handles empty folders
   - python ./tests/compare_to_reference.py
