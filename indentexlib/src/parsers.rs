@@ -69,25 +69,38 @@ fn args_parser(input: &str) -> nom::IResult<&str, String> {
 }
 
 fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
+    use crate::utils::trim_end_inplace;
     use nom::bytes::complete::{is_a, tag};
     use nom::combinator::{opt, rest};
 
     let (input, indentation) = opt(is_a(" "))(input)?;
     let (input, _) = tag("# ")(input)?;
     let (input, name) = name_parser(input)?;
+    let (input, _) = opt(is_a(" \t"))(input)?;
     let (input, opts) = opts_parser(input)?;
     let (input, _) = tag(":")(input)?;
+    let (input, _) = opt(is_a(" \t"))(input)?;
     let (input, args) = args_parser(input)?;
     let (input, comment) = rest(input)?;
+
+    // Name parser stops at whitespaces, so we assert that it is already trimmed
+    debug_assert_eq!(&name, name.trim());
+    // Opts and args parser consumes whitespaces, however due to a consuming whitespace parser
+    // _before it_ we can assume that at least its result does not _start_ with a whitespace
+    debug_assert_eq!(&opts, opts.trim_start());
+    debug_assert_eq!(&args, args.trim_start());
+    // Comment is either empty or always starts with a percent sign and is thus automatically
+    // trimmed in the beginning
+    debug_assert_eq!(comment, comment.trim_start());
 
     Ok((
         input,
         RawHashlineParseData::new(
             indentation.map_or(0, |s| s.len()),
-            name.trim().to_string(),    // FIXME: Avoid copying here
-            opts.trim().to_string(),    // FIXME: Avoid copying here
-            args.trim().to_string(),    // FIXME: Avoid copying here
-            comment.trim().to_string(), // FIXME: Avoid copying here
+            name,
+            trim_end_inplace(opts),
+            trim_end_inplace(args),
+            comment.trim_end().to_string(),
         ),
     ))
 }
@@ -1001,6 +1014,46 @@ mod tests {
                         r"\bar".to_string(),
                         "".to_string(),
                         "".to_string(),
+                    ),
+                ),
+                (
+                    r"  # foo \bar :",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        r"\bar".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    r"  # foo \bar :  qux   ",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        r"\bar".to_string(),
+                        "qux".to_string(),
+                        "".to_string(),
+                    ),
+                ),
+                (
+                    r"  # foo \bar :  qux   % blup    ",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        r"\bar".to_string(),
+                        "qux".to_string(),
+                        "% blup".to_string(),
+                    ),
+                ),
+                (
+                    "  # foo \tbar\t : \t qux \t  % \t blup  \t  ",
+                    RawHashlineParseData::new(
+                        2,
+                        "foo".to_string(),
+                        r"bar".to_string(),
+                        "qux".to_string(),
+                        "% \t blup".to_string(),
                     ),
                 ),
             ] {
