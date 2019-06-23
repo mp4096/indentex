@@ -29,6 +29,13 @@ pub fn scan_indents<T: AsRef<str>>(lines: &[T]) -> Vec<usize> {
     adjusted_indents
 }
 
+#[inline]
+pub fn trim_end_inplace(mut s: String) -> String {
+    let len_to_truncate = s.trim_end().len();
+    s.truncate(len_to_truncate);
+    s
+}
+
 // LCOV_EXCL_START
 #[cfg(test)]
 mod tests {
@@ -65,6 +72,27 @@ mod tests {
         let d = ["d", " d", "", " d", "", "   d", "  d", "     d"];
         assert_eq!(scan_indents(&d), [0, 1, 1, 1, 3, 3, 2, 5, 0]);
         assert_eq!(scan_indents(&d).capacity(), 9);
+    }
+
+    #[test]
+    fn trim_end_inplace() {
+        use super::trim_end_inplace;
+
+        let foo = trim_end_inplace("  foo  ".to_string());
+        assert_eq!(&foo, "  foo");
+        assert_eq!(foo.len(), 5);
+
+        let bar = trim_end_inplace("\t\tbar\t\t".to_string());
+        assert_eq!(&bar, "\t\tbar");
+        assert_eq!(bar.len(), 5);
+
+        let qux = trim_end_inplace("\t qux \t".to_string());
+        assert_eq!(&qux, "\t qux");
+        assert_eq!(qux.len(), 5);
+
+        let baz = trim_end_inplace("\t baz \n".to_string());
+        assert_eq!(&baz, "\t baz");
+        assert_eq!(baz.len(), 5);
     }
 }
 // LCOV_EXCL_STOP
