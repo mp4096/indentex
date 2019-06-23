@@ -50,9 +50,8 @@ before_script:
 
 script:
   - cargo test --all
-  - cargo run -- -v ./tests/
-  - cargo run -- -v ./tests/empty_folder/  # Check how indentex handles empty folders
-  - python ./tests/compare_to_reference.py
+  - cargo run -- -v .
+  - cargo run -- -v ./tests/blns/blns.inden.tex  # Needs to be tested separately, since this file is gitignore'd
 
 after_success: >
   if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$TRAVIS_RUST_VERSION" == "stable" ]]; then
