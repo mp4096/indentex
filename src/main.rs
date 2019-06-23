@@ -1,9 +1,3 @@
-mod error;
-mod file_utils;
-mod parsers;
-mod parsing_types;
-mod transpile;
-
 enum ReturnCode {
     Ok = 0,
     WalkError = 2,
@@ -12,9 +6,9 @@ enum ReturnCode {
 }
 
 fn main() {
-    use crate::file_utils::walk_indentex_files;
-    use crate::transpile::{transpile_file, TranspileOptions};
     use clap::{crate_authors, crate_description, crate_version, App, Arg};
+    use indentexlib::file_utils::walk_indentex_files;
+    use indentexlib::transpile::{transpile_file, TranspileOptions};
     use rayon::prelude::*;
     use std::cmp;
     use std::path::{Path, PathBuf};
