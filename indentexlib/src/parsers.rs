@@ -1004,7 +1004,7 @@ mod tests {
                     ),
                 ),
             ] {
-                assert_eq!(hashline_parser(input), Ok(("", expected_raw_parse_data)),);
+                assert_eq!(hashline_parser(input), Ok(("", expected_raw_parse_data)));
             }
         }
 
@@ -1064,7 +1064,7 @@ mod tests {
                 ("   * bar", RawItemlineParseData::new(3, "bar".to_string())),
                 ("***", RawItemlineParseData::new(0, "**".to_string())),
             ] {
-                assert_eq!(itemline_parser(input), Ok(("", expected_raw_parse_data)),);
+                assert_eq!(itemline_parser(input), Ok(("", expected_raw_parse_data)));
             }
         }
 
