@@ -3,6 +3,7 @@ cache: cargo
 sudo: false
 
 matrix:
+  fast_finish: true
   include:
     # Stable
     - os: linux
