@@ -7,7 +7,7 @@ matrix:
   include:
     # Stable
     - os: linux
-      dist: trusty
+      dist: xenial
       rust: stable
       addons:
         apt:
@@ -23,13 +23,13 @@ matrix:
       rust: stable
     # Beta
     - os: linux
-      dist: trusty
+      dist: xenial
       rust: beta
     - os: osx
       rust: beta
     # Nightly
     - os: linux
-      dist: trusty
+      dist: xenial
       rust: nightly
     - os: osx
       rust: nightly
