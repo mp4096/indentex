@@ -3,15 +3,14 @@ This should be converted:
 # section: Foo: bar
 # section [Foo bar]: Foo bar
 # section [Foo\: bar]: Foo: bar
-
 # section* : spam eggs
 
 Comments should be handled correctly:
 # section: foo bar % test
 # section: \% baz % test
-# sec%tion: foo bar
-# section % baz: foo bar
 
 This should not be converted:
 # section
 #section: Foo
+# sec%tion: foo bar
+# section % baz: foo bar
