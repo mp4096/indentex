@@ -1,0 +1,25 @@
+[package]
+name = "indentexlib"
+version = "0.5.0-beta"
+authors = ["Mikhail Pak <code@mp4096.com>", "Hans Kirchner <h.kirchner@tum.de>"]
+license = "MIT"
+description = "Library for the Indentex transpiler"
+publish = false
+edition = "2018"
+
+[lib]
+name = "indentexlib"
+path = "src/lib.rs"
+test = true
+doctest = false
+bench = false
+doc = false
+plugin = false
+proc-macro = false
+harness = true
+
+[dependencies]
+nom = "^5.0.0-beta3"
+
+[dev-dependencies]
+insta = "^0.8.1"

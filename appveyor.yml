@@ -47,11 +47,9 @@ before_test:
     -FileName ./tests/blns/blns.inden.tex
 
 test_script:
-  - cargo build
-  - cargo test
-  - cargo run -- -v ./tests/
-  - cargo run -- -v ./tests/empty_folder/  # Check how indentex handles empty folders
-  - python ./tests/compare_to_reference.py
+  - cargo test --all
+  - cargo run -- -v .
+  - cargo run -- -v ./tests/blns/blns.inden.tex  # Needs to be tested separately, since this file is gitignore'd
 
 after_test:
     - if [%static%]==[1] if [%APPVEYOR_REPO_TAG%]==[true] (cd .\packaging\windows_wix)
