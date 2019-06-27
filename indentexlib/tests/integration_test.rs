@@ -46,10 +46,7 @@ fn transpile_list_like() {
 
 #[test]
 fn transpile_mixed_tabs() {
-    assert_display_snapshot_matches!(
-        "mixed_tabs",
-        transpile_from_file("mixed_tabs.inden.tex")
-    );
+    assert_display_snapshot_matches!("mixed_tabs", transpile_from_file("mixed_tabs.inden.tex"));
 }
 
 #[test]
