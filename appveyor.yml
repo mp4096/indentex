@@ -83,7 +83,7 @@ deploy:
     artifact: indentex_choco_package
     server: https://chocolatey.org
     api_key:
-      secure: c0ycGcvfqd0GuAuKdRVHczXioz8NC4aVarjZLYyVNtdkK4/5YIpGfriJnZjQY7l7
+      secure: edOr1j8ikBbK3zm1mL18ppWCzYmoxJo9O3Ha2fdmg0mxhxB6LDnXep5uhLvFoSQE
     skip_symbols: true
     on:
       appveyor_repo_tag: true
