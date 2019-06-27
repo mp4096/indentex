@@ -72,7 +72,7 @@ deploy:
   - provider: GitHub
     artifact: indentex_installer, indentex_executable, indentex_digests
     auth_token:
-      secure: OJRWfhZpmmunYEznHNrUiBvkcd80Gh6pafJboHC4ba20mVKL0JD5KLqM70sDf0xh
+      secure: edOr1j8ikBbK3zm1mL18ppWCzYmoxJo9O3Ha2fdmg0mxhxB6LDnXep5uhLvFoSQE
     on:
       appveyor_repo_tag: true
       appveyor_repo_name: mp4096/indentex
@@ -83,7 +83,7 @@ deploy:
     artifact: indentex_choco_package
     server: https://chocolatey.org
     api_key:
-      secure: edOr1j8ikBbK3zm1mL18ppWCzYmoxJo9O3Ha2fdmg0mxhxB6LDnXep5uhLvFoSQE
+      secure: c0ycGcvfqd0GuAuKdRVHczXioz8NC4aVarjZLYyVNtdkK4/5YIpGfriJnZjQY7l7
     skip_symbols: true
     on:
       appveyor_repo_tag: true
