@@ -77,3 +77,107 @@ pub fn transpile(mut lines: Vec<String>, options: &TranspileOptions) -> String {
 
     transpiled
 }
+
+// LCOV_EXCL_START
+#[cfg(test)]
+mod tests {
+    #[cfg(test)]
+    mod transpilation_spec {
+        use super::super::{transpile, TranspileOptions};
+
+        #[test]
+        fn vanilla_latex_is_not_modified() {
+            let input = (vec![
+                r"\newcommand{\foo}[1]{foo #1}",
+                r"  \begin{equation}1+1\end{equation}",
+                r" $ 1 + \frac{1}{2}$",
+            ])
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
+
+            let expected = "\
+                            \\newcommand{\\foo}[1]{foo #1}\
+                            \n  \\begin{equation}1+1\\end{equation}\
+                            \n $ 1 + \\frac{1}{2}$\n";
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+            assert_eq!(&transpile(input, &to), expected);
+        }
+
+        #[test]
+        fn single_line_commands() {
+            let input = (vec!["# foo: bar % qux", "  # foo[opts]: bar"])
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect();
+
+            let expected = "\\foo{bar} % qux\n  \\foo[opts]{bar}\n";
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+            assert_eq!(&transpile(input, &to), expected);
+        }
+
+        #[test]
+        fn open_and_close_envs_correctly() {
+            let input = (vec!["# foo:", "  bar"])
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect();
+
+            let expected = "\\begin{foo}\n  bar\n\\end{foo}\n";
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+            assert_eq!(&transpile(input, &to), expected);
+        }
+
+        #[test]
+        fn open_and_close_envs_correctly_if_empty_body() {
+            let input = (vec!["# foo:", "  # bar:"])
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect();
+
+            let expected = "\\begin{foo}\n  \\begin{bar}\n  \\end{bar}\n\\end{foo}\n";
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: false,
+            };
+            assert_eq!(&transpile(input, &to), expected);
+        }
+
+        #[test]
+        fn open_and_close_envs_correctly_with_flattened_output() {
+            let input = (vec!["# foo:", "  # bar:"])
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect();
+
+            let expected = "\\begin{foo}\n\\begin{bar}\n\\end{bar}\n\\end{foo}\n";
+            let to = TranspileOptions {
+                flatten_output: true,
+                prepend_do_not_edit_notice: false,
+            };
+            assert_eq!(&transpile(input, &to), expected);
+        }
+
+        #[test]
+        fn do_not_edit_notice() {
+            let to = TranspileOptions {
+                flatten_output: false,
+                prepend_do_not_edit_notice: true,
+            };
+            assert_eq!(
+                &transpile(vec!["".to_string()], &to),
+                &format!("{}\n", super::super::DO_NOT_EDIT_NOTICE)
+            );
+        }
+    }
+}
+// LCOV_EXCL_STOP
