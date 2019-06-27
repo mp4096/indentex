@@ -86,8 +86,10 @@ after_success: >
 before_deploy:
   - cargo install cargo-deb
   - cargo deb --target=x86_64-unknown-linux-gnu
-  - DEBFILENAME="$(find target/x86_64-unknown-linux-gnu/debian -type f -name 'indentex_*_amd64.deb')"
-  - sha512sum $DEBFILENAME > $DEBFILENAME.DIGEST
+  - >
+    cd target/x86_64-unknown-linux-gnu/debian &&
+    DEBFILENAME="$(find . -type f -name 'indentex_*_amd64.deb')" &&
+    sha512sum $DEBFILENAME > $DEBFILENAME.DIGEST
 
 deploy:
   provider: releases
