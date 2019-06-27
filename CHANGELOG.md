@@ -1,7 +1,6 @@
 :warning: Before the 1.0 release, we only document minor releases here!
 
-# 0.5.0-beta
-[PR #49](https://github.com/mp4096/indentex/pull/49)
+# 0.5.0
 
 ### :warning: Breaking changes
 
@@ -15,9 +14,11 @@
 ### Non-breaking changes
 
 * Migrated to nom 5
-* Changed parsing logic
-* Refactor code
-* Add unit tests
+* Refactored parsing logic
+* Refactored a lot of other code
+* Added unit tests and refactored integration tests
+* Split into library and a binary
+* Library has full line coverage now
 
 # 0.4.0 (2017-02-18)
 Commit 2adba137618d72c0251ddedfbbe01cc076536ce7

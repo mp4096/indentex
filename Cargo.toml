@@ -1,6 +1,6 @@
 [package]
 name = "indentex"
-version = "0.5.0-beta"
+version = "0.5.0"
 authors = ["Mikhail Pak <code@mp4096.com>", "Hans Kirchner <h.kirchner@tum.de>"]
 license = "MIT"
 description = "Transpiler for an indentation-based superset of LaTeX"
