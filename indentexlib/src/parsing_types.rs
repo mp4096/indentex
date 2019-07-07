@@ -1,16 +1,16 @@
 #[derive(Debug, PartialEq)]
 pub struct RawHashlineParseData {
-    indent_depth: usize,
-    name: String,
-    opts: String,
-    args: String,
-    comment: String,
+    pub(super) indent_depth: usize,
+    pub(super) name: String,
+    pub(super) opts: String,
+    pub(super) args: String,
+    pub(super) comment: String,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct RawItemlineParseData {
-    indent_depth: usize,
-    item: String,
+    pub(super) indent_depth: usize,
+    pub(super) item: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -26,24 +26,6 @@ pub struct Environment {
     opts: String,
     comment: String,
     is_list_like: bool,
-}
-
-impl RawHashlineParseData {
-    pub fn new(
-        indent_depth: usize,
-        name: String,
-        opts: String,
-        args: String,
-        comment: String,
-    ) -> Self {
-        Self {
-            indent_depth,
-            name,
-            opts,
-            args,
-            comment,
-        }
-    }
 }
 
 #[inline]
@@ -86,12 +68,6 @@ impl From<RawHashlineParseData> for Hashline {
                 comment = raw_hashline.comment.trim(),
             ))
         }
-    }
-}
-
-impl RawItemlineParseData {
-    pub fn new(indent_depth: usize, item: String) -> Self {
-        Self { indent_depth, item }
     }
 }
 
@@ -289,27 +265,45 @@ mod tests {
         use super::{Hashline, RawItemlineParseData};
 
         assert_eq!(
-            Hashline::from(RawItemlineParseData::new(0, "".to_string())),
+            Hashline::from(RawItemlineParseData {
+                indent_depth: 0,
+                item: "".to_string()
+            }),
             Hashline::PlainLine(r"\item".to_string())
         );
         assert_eq!(
-            Hashline::from(RawItemlineParseData::new(0, "".to_string())),
+            Hashline::from(RawItemlineParseData {
+                indent_depth: 0,
+                item: "".to_string()
+            }),
             Hashline::PlainLine(r"\item".to_string())
         );
         assert_eq!(
-            Hashline::from(RawItemlineParseData::new(2, "".to_string())),
+            Hashline::from(RawItemlineParseData {
+                indent_depth: 2,
+                item: "".to_string()
+            }),
             Hashline::PlainLine(r"  \item".to_string())
         );
         assert_eq!(
-            Hashline::from(RawItemlineParseData::new(0, "foo".to_string())),
+            Hashline::from(RawItemlineParseData {
+                indent_depth: 0,
+                item: "foo".to_string()
+            }),
             Hashline::PlainLine(r"\item foo".to_string())
         );
         assert_eq!(
-            Hashline::from(RawItemlineParseData::new(3, "bar".to_string())),
+            Hashline::from(RawItemlineParseData {
+                indent_depth: 3,
+                item: "bar".to_string()
+            }),
             Hashline::PlainLine(r"   \item bar".to_string())
         );
         assert_eq!(
-            Hashline::from(RawItemlineParseData::new(0, "**".to_string())),
+            Hashline::from(RawItemlineParseData {
+                indent_depth: 0,
+                item: "**".to_string()
+            }),
             Hashline::PlainLine(r"\item **".to_string())
         );
     }

@@ -95,13 +95,13 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
 
     Ok((
         input,
-        RawHashlineParseData::new(
-            indentation.map_or(0, |s| s.len()),
-            name,
-            trim_end_inplace(opts),
-            trim_end_inplace(args),
-            comment.trim_end().to_string(),
-        ),
+        RawHashlineParseData {
+            indent_depth: indentation.map_or(0, |s| s.len()),
+            name: name,
+            opts: trim_end_inplace(opts),
+            args: trim_end_inplace(args),
+            comment: comment.trim_end().to_string(),
+        },
     ))
 }
 
@@ -116,7 +116,10 @@ fn itemline_parser(input: &str) -> nom::IResult<&str, RawItemlineParseData> {
 
     Ok((
         input,
-        RawItemlineParseData::new(indentation.map_or(0, |s| s.len()), item.trim().to_string()),
+        RawItemlineParseData {
+            indent_depth: indentation.map_or(0, |s| s.len()),
+            item: item.trim().to_string(),
+        },
     ))
 }
 
@@ -898,163 +901,163 @@ mod tests {
             for (input, expected_raw_parse_data) in vec![
                 (
                     "# foo:      ",
-                    RawHashlineParseData::new(
-                        0,
-                        "foo".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 0,
+                        name: "foo".to_string(),
+                        opts: "".to_string(),
+                        args: "".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     " # foo: bar   ",
-                    RawHashlineParseData::new(
-                        1,
-                        "foo".to_string(),
-                        "".to_string(),
-                        "bar".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 1,
+                        name: "foo".to_string(),
+                        opts: "".to_string(),
+                        args: "bar".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     "  # foo[bar]:",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        "[bar]".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: "[bar]".to_string(),
+                        args: "".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     "   # foo[bar]: qux",
-                    RawHashlineParseData::new(
-                        3,
-                        "foo".to_string(),
-                        "[bar]".to_string(),
-                        "qux".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 3,
+                        name: "foo".to_string(),
+                        opts: "[bar]".to_string(),
+                        args: "qux".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     r"    # foo[\:]: bar",
-                    RawHashlineParseData::new(
-                        4,
-                        "foo".to_string(),
-                        "[:]".to_string(),
-                        "bar".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 4,
+                        name: "foo".to_string(),
+                        opts: "[:]".to_string(),
+                        args: "bar".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     "   # foo: % bar",
-                    RawHashlineParseData::new(
-                        3,
-                        "foo".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "% bar".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 3,
+                        name: "foo".to_string(),
+                        opts: "".to_string(),
+                        args: "".to_string(),
+                        comment: "% bar".to_string(),
+                    },
                 ),
                 (
                     "  # foo: bar % baz",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        "".to_string(),
-                        "bar".to_string(),
-                        "% baz".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: "".to_string(),
+                        args: "bar".to_string(),
+                        comment: "% baz".to_string(),
+                    },
                 ),
                 (
                     r" # foo: bar\% % baz   ",
-                    RawHashlineParseData::new(
-                        1,
-                        "foo".to_string(),
-                        "".to_string(),
-                        r"bar\%".to_string(),
-                        "% baz".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 1,
+                        name: "foo".to_string(),
+                        opts: "".to_string(),
+                        args: r"bar\%".to_string(),
+                        comment: "% baz".to_string(),
+                    },
                 ),
                 (
                     r"# foo\:bar:",
-                    RawHashlineParseData::new(
-                        0,
-                        "foo:bar".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 0,
+                        name: "foo:bar".to_string(),
+                        opts: "".to_string(),
+                        args: "".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     " # foo_bar:",
-                    RawHashlineParseData::new(
-                        1,
-                        "foo_bar".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 1,
+                        name: "foo_bar".to_string(),
+                        opts: "".to_string(),
+                        args: "".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     "  # foo bar:",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        "bar".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: "bar".to_string(),
+                        args: "".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     r"  # foo\bar:",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        r"\bar".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: r"\bar".to_string(),
+                        args: "".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     r"  # foo \bar :",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        r"\bar".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: r"\bar".to_string(),
+                        args: "".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     r"  # foo \bar :  qux   ",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        r"\bar".to_string(),
-                        "qux".to_string(),
-                        "".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: r"\bar".to_string(),
+                        args: "qux".to_string(),
+                        comment: "".to_string(),
+                    },
                 ),
                 (
                     r"  # foo \bar :  qux   % blup    ",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        r"\bar".to_string(),
-                        "qux".to_string(),
-                        "% blup".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: r"\bar".to_string(),
+                        args: "qux".to_string(),
+                        comment: "% blup".to_string(),
+                    },
                 ),
                 (
                     "  # foo \tbar\t : \t qux \t  % \t blup  \t  ",
-                    RawHashlineParseData::new(
-                        2,
-                        "foo".to_string(),
-                        r"bar".to_string(),
-                        "qux".to_string(),
-                        "% \t blup".to_string(),
-                    ),
+                    RawHashlineParseData {
+                        indent_depth: 2,
+                        name: "foo".to_string(),
+                        opts: r"bar".to_string(),
+                        args: "qux".to_string(),
+                        comment: "% \t blup".to_string(),
+                    },
                 ),
             ] {
                 assert_eq!(hashline_parser(input), Ok(("", expected_raw_parse_data)));
@@ -1108,14 +1111,62 @@ mod tests {
             use super::super::RawItemlineParseData;
 
             for (input, expected_raw_parse_data) in vec![
-                ("*", RawItemlineParseData::new(0, "".to_string())),
-                ("*  ", RawItemlineParseData::new(0, "".to_string())),
-                ("  *", RawItemlineParseData::new(2, "".to_string())),
-                ("  *  ", RawItemlineParseData::new(2, "".to_string())),
-                ("*foo", RawItemlineParseData::new(0, "foo".to_string())),
-                ("* foo", RawItemlineParseData::new(0, "foo".to_string())),
-                ("   * bar", RawItemlineParseData::new(3, "bar".to_string())),
-                ("***", RawItemlineParseData::new(0, "**".to_string())),
+                (
+                    "*",
+                    RawItemlineParseData {
+                        indent_depth: 0,
+                        item: "".to_string(),
+                    },
+                ),
+                (
+                    "*  ",
+                    RawItemlineParseData {
+                        indent_depth: 0,
+                        item: "".to_string(),
+                    },
+                ),
+                (
+                    "  *",
+                    RawItemlineParseData {
+                        indent_depth: 2,
+                        item: "".to_string(),
+                    },
+                ),
+                (
+                    "  *  ",
+                    RawItemlineParseData {
+                        indent_depth: 2,
+                        item: "".to_string(),
+                    },
+                ),
+                (
+                    "*foo",
+                    RawItemlineParseData {
+                        indent_depth: 0,
+                        item: "foo".to_string(),
+                    },
+                ),
+                (
+                    "* foo",
+                    RawItemlineParseData {
+                        indent_depth: 0,
+                        item: "foo".to_string(),
+                    },
+                ),
+                (
+                    "   * bar",
+                    RawItemlineParseData {
+                        indent_depth: 3,
+                        item: "bar".to_string(),
+                    },
+                ),
+                (
+                    "***",
+                    RawItemlineParseData {
+                        indent_depth: 0,
+                        item: "**".to_string(),
+                    },
+                ),
             ] {
                 assert_eq!(itemline_parser(input), Ok(("", expected_raw_parse_data)));
             }
