@@ -15,7 +15,7 @@ edition = "2018"
 [dependencies]
 clap = "^2.33.0"
 globset = "^0.4.4"
-ignore = "^0.4.7"
+ignore = "^0.4.8"
 rayon = "^1.1.0"
 indentexlib = { path = "indentexlib" }
 
