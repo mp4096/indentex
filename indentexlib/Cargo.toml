@@ -19,7 +19,7 @@ proc-macro = false
 harness = true
 
 [dependencies]
-nom = "^5.0.0"
+nom = "^5.0.1"
 
 [dev-dependencies]
 insta = "^0.10.1"
