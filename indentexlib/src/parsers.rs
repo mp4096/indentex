@@ -97,7 +97,7 @@ fn hashline_parser(input: &str) -> nom::IResult<&str, RawHashlineParseData> {
         input,
         RawHashlineParseData {
             indent_depth: indentation.map_or(0, |s| s.len()),
-            name: name,
+            name,
             opts: trim_end_inplace(opts),
             args: trim_end_inplace(args),
             comment: comment.trim_end().to_string(),
