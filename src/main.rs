@@ -27,9 +27,7 @@ fn main() {
     use clap::{crate_authors, crate_description, crate_version, App, Arg};
     use indentexlib::TranspileOptions;
     use rayon::prelude::*;
-    use std::cmp;
     use std::path::{Path, PathBuf};
-    use std::process;
 
     let m = App::new("indentex")
         .version(crate_version!())
@@ -105,5 +103,5 @@ fn main() {
         .max()
         .unwrap_or(ReturnCode::Ok as i32);
 
-    process::exit(cmp::max(ret_val, ret_val_transpilation));
+    std::process::exit(std::cmp::max(ret_val, ret_val_transpilation));
 }
