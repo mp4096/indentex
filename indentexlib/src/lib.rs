@@ -14,7 +14,6 @@ const DO_NOT_EDIT_NOTICE: &str =
      % ============================================================== %\n";
 
 pub struct TranspileOptions {
-    pub flatten_output: bool,
     pub prepend_do_not_edit_notice: bool,
 }
 
@@ -52,11 +51,7 @@ pub fn transpile(mut lines: Vec<String>, options: &TranspileOptions) -> String {
                 tag_begin
             }
         };
-        if options.flatten_output {
-            transpiled.push_str(tl.trim_start());
-        } else {
-            transpiled.push_str(&tl);
-        }
+        transpiled.push_str(&tl);
         transpiled.push_str(LINESEP);
 
         // Check if we are in an environment and close as many as needed
@@ -66,11 +61,7 @@ pub fn transpile(mut lines: Vec<String>, options: &TranspileOptions) -> String {
         } {
             // `unwrap()` is safe here since we have already checked if the stack is empty
             let tag_end = env_stack.pop().unwrap().latex_end();
-            if options.flatten_output {
-                transpiled.push_str(tag_end.trim_start());
-            } else {
-                transpiled.push_str(&tag_end);
-            }
+            transpiled.push_str(&tag_end);
             transpiled.push_str(LINESEP);
         }
     }
@@ -101,7 +92,6 @@ mod tests {
                             \n  \\begin{equation}1+1\\end{equation}\
                             \n $ 1 + \\frac{1}{2}$\n";
             let to = TranspileOptions {
-                flatten_output: false,
                 prepend_do_not_edit_notice: false,
             };
             assert_eq!(&transpile(input, &to), expected);
@@ -116,7 +106,6 @@ mod tests {
 
             let expected = "\\foo{bar} % qux\n  \\foo[opts]{bar}\n";
             let to = TranspileOptions {
-                flatten_output: false,
                 prepend_do_not_edit_notice: false,
             };
             assert_eq!(&transpile(input, &to), expected);
@@ -131,7 +120,6 @@ mod tests {
 
             let expected = "\\begin{foo}\n  bar\n\\end{foo}\n";
             let to = TranspileOptions {
-                flatten_output: false,
                 prepend_do_not_edit_notice: false,
             };
             assert_eq!(&transpile(input, &to), expected);
@@ -146,22 +134,6 @@ mod tests {
 
             let expected = "\\begin{foo}\n  \\begin{bar}\n  \\end{bar}\n\\end{foo}\n";
             let to = TranspileOptions {
-                flatten_output: false,
-                prepend_do_not_edit_notice: false,
-            };
-            assert_eq!(&transpile(input, &to), expected);
-        }
-
-        #[test]
-        fn open_and_close_envs_correctly_with_flattened_output() {
-            let input = (vec!["# foo:", "  # bar:"])
-                .into_iter()
-                .map(|s| s.to_string())
-                .collect();
-
-            let expected = "\\begin{foo}\n\\begin{bar}\n\\end{bar}\n\\end{foo}\n";
-            let to = TranspileOptions {
-                flatten_output: true,
                 prepend_do_not_edit_notice: false,
             };
             assert_eq!(&transpile(input, &to), expected);
@@ -170,7 +142,6 @@ mod tests {
         #[test]
         fn do_not_edit_notice() {
             let to = TranspileOptions {
-                flatten_output: false,
                 prepend_do_not_edit_notice: true,
             };
             assert_eq!(

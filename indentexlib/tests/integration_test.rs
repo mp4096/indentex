@@ -18,7 +18,6 @@ fn transpile_from_file(test_filename: &str) -> String {
     let lines = read_from_file(test_filename);
 
     let default_options = indentexlib::TranspileOptions {
-        flatten_output: false,
         prepend_do_not_edit_notice: true,
     };
 
@@ -32,11 +31,10 @@ fn vanilla_latex_is_not_modified() {
 
     let lines = read_from_file("large_latex_corpus.inden.tex");
     let expected_lines = lines.clone();
-    let no_flatten_no_prepend = indentexlib::TranspileOptions {
-        flatten_output: false,
+    let no_prepend = indentexlib::TranspileOptions {
         prepend_do_not_edit_notice: false,
     };
-    let transpiled = indentexlib::transpile(lines, &no_flatten_no_prepend);
+    let transpiled = indentexlib::transpile(lines, &no_prepend);
     let actual_lines = read_and_trim_lines(BufReader::new(transpiled.as_bytes())).unwrap();
     assert_eq!(actual_lines, expected_lines);
 }

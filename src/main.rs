@@ -51,11 +51,6 @@ fn main() {
                 .long("verbose"),
         )
         .arg(
-            Arg::with_name("flatten-output")
-                .help("Remove all indentation from the output")
-                .long("flatten-output"),
-        )
-        .arg(
             Arg::with_name("disable-do-not-edit")
                 .help("Disable prepending the 'DO NOT EDIT' notice")
                 .long("disable-do-not-edit"),
@@ -65,7 +60,6 @@ fn main() {
     let path = Path::new(m.value_of("path").unwrap());
     let verbose = m.is_present("verbose");
     let options = TranspileOptions {
-        flatten_output: m.is_present("flatten-output"),
         prepend_do_not_edit_notice: !m.is_present("disable-do-not-edit"),
     };
 
