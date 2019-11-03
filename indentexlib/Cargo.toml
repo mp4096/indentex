@@ -22,4 +22,4 @@ harness = true
 nom = "^5.0.1"
 
 [dev-dependencies]
-insta = "^0.11.0"
+insta = "^0.12.0"
