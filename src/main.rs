@@ -44,9 +44,9 @@ fn main() {
         )
         .arg(
             Arg::with_name("verbose")
-                .help("Show transpilation progress")
+                .help("Sets the level of verbosity (-v, -vv, -vvv)")
                 .short("v")
-                .long("verbose"),
+                .multiple(true),
         )
         .arg(
             Arg::with_name("disable-do-not-edit")
@@ -55,8 +55,15 @@ fn main() {
         )
         .get_matches();
 
+    let log_level = match m.occurrences_of("verbose") {
+        0 => log::LevelFilter::Warn,
+        1 => log::LevelFilter::Info,
+        2 => log::LevelFilter::Debug,
+        3 | _ => log::LevelFilter::Trace,
+    };
+    env_logger::Builder::new().filter_level(log_level).init();
+
     let path = Path::new(m.value_of("path").unwrap());
-    let verbose = m.is_present("verbose");
     let options = TranspileOptions {
         prepend_do_not_edit_notice: !m.is_present("disable-do-not-edit"),
     };
@@ -70,13 +77,13 @@ fn main() {
             Ok(b) => b,
             Err(e) => {
                 ret_val = ReturnCode::WalkError as i32;
-                eprintln!("{}", e);
+                log::error!("{}", e);
                 Vec::new()
             }
         }
     } else {
         ret_val = ReturnCode::FileTypeError as i32;
-        eprintln!(
+        log::error!(
             "Error: path '{}' is neither a file nor a directory",
             path.display()
         );
@@ -87,16 +94,11 @@ fn main() {
         .par_iter()
         .map(|p| match transpile_file(&p, &options) {
             Ok(_) => {
-                if verbose {
-                    println!("Transpiling file '{}'... ok", p.display());
-                }
+                log::info!("Transpiling file '{}' ... ok", p.display());
                 ReturnCode::Ok
             }
             Err(e) => {
-                if verbose {
-                    println!("Transpiling file '{}'... failed", p.display());
-                }
-                eprintln!("Could not transpile '{}': {}", p.display(), e);
+                log::error!("Transpiling file '{}' ... failed: {}", p.display(), e);
                 ReturnCode::TranspilationError
             }
         } as i32)
