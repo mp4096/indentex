@@ -19,11 +19,10 @@ impl From<std::io::Error> for IndentexError {
 
 impl std::fmt::Display for IndentexError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        use std::error::Error;
         match *self {
-            IndentexError::Io(ref e) => write!(f, "{}", e.description()),
+            IndentexError::Io(ref e) => e.fmt(f),
             IndentexError::InvalidExtension => write!(f, "not a valid indentex file"),
-            IndentexError::WalkError(ref e) => write!(f, "{}", e.description()),
+            IndentexError::WalkError(ref e) => e.fmt(f),
         }
     }
 }
