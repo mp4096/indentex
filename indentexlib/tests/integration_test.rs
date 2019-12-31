@@ -1,4 +1,4 @@
-use insta::assert_display_snapshot_matches;
+use insta::assert_display_snapshot;
 
 #[cfg(test)]
 fn read_from_file(test_filename: &str) -> Vec<String> {
@@ -41,7 +41,7 @@ fn vanilla_latex_is_not_modified() {
 
 #[test]
 fn transpile_corner_cases() {
-    assert_display_snapshot_matches!(
+    assert_display_snapshot!(
         "corner_cases",
         transpile_from_file("corner_cases.inden.tex")
     );
@@ -49,12 +49,12 @@ fn transpile_corner_cases() {
 
 #[test]
 fn transpile_envs() {
-    assert_display_snapshot_matches!("envs", transpile_from_file("envs.inden.tex"));
+    assert_display_snapshot!("envs", transpile_from_file("envs.inden.tex"));
 }
 
 #[test]
 fn transpile_large_corpus() {
-    assert_display_snapshot_matches!(
+    assert_display_snapshot!(
         "large_corpus",
         transpile_from_file("large_corpus.inden.tex")
     );
@@ -62,17 +62,17 @@ fn transpile_large_corpus() {
 
 #[test]
 fn transpile_list_like() {
-    assert_display_snapshot_matches!("list_like", transpile_from_file("list_like.inden.tex"));
+    assert_display_snapshot!("list_like", transpile_from_file("list_like.inden.tex"));
 }
 
 #[test]
 fn transpile_mixed_tabs() {
-    assert_display_snapshot_matches!("mixed_tabs", transpile_from_file("mixed_tabs.inden.tex"));
+    assert_display_snapshot!("mixed_tabs", transpile_from_file("mixed_tabs.inden.tex"));
 }
 
 #[test]
 fn transpile_single_line_cmds() {
-    assert_display_snapshot_matches!(
+    assert_display_snapshot!(
         "single_line_cmds",
         transpile_from_file("single_line_cmds.inden.tex")
     );
