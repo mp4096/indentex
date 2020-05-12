@@ -13,7 +13,7 @@ edition = "2018"
 [workspace]
 
 [dependencies]
-clap = "^2.33.0"
+clap = "^2.33.1"
 env_logger = "^0.7.1"
 globset = "^0.4.5"
 ignore = "^0.4.15"
