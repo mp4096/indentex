@@ -15,7 +15,7 @@ edition = "2018"
 [dependencies]
 clap = "^2.33.3"
 env_logger = "^0.8.2"
-globset = "^0.4.6"
+globset = "^0.4.8"
 ignore = "^0.4.17"
 indentexlib = { path = "indentexlib" }
 log = { version = "^0.4.14", features = ["release_max_level_debug"] }
