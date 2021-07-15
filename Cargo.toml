@@ -14,7 +14,7 @@ edition = "2018"
 
 [dependencies]
 clap = "^2.33.3"
-env_logger = "^0.8.2"
+env_logger = "^0.9.0"
 globset = "^0.4.6"
 ignore = "^0.4.17"
 indentexlib = { path = "indentexlib" }
